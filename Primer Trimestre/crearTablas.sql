@@ -14,16 +14,6 @@ id char(2) CONSTRAINT PK_modalidades PRIMARY KEY,
 isIndividual bit not null,
 )
 
-CREATE TABLE deportistas_modalidades (
-id_deportistas char(6)not null,
-id_modalidades char(2) not null,
-clasificacion tinyint not null,
-
-CONSTRAINT PK_deportistas_modalidades PRIMARY KEY(id_deportistas, id_modalidades),
-CONSTRAINT FK_deportistas_modalidades FOREIGN KEY (id_deportistas) REFERENCES deportistas (id),
-CONSTRAINT FK_deportistas_modalidades2 FOREIGN KEY (id_modalidades) REFERENCES modalidades (id),
-)
-
 CREATE TABLE deportes(
 id char(3) CONSTRAINT PK_deportes PRIMARY KEY,
 nombre varchar(10) null,
@@ -41,6 +31,16 @@ CONSTRAINT FK_deportistas_universidades FOREIGN KEY (id_universidad) REFERENCES 
 	ON DELETE NO ACTION ON UPDATE CASCADE,
 CONSTRAINT FK_deportistas_deportes FOREIGN KEY (id_deportes) REFERENCES deportes(id)
 	ON DELETE NO ACTION ON UPDATE CASCADE
+)
+
+CREATE TABLE deportistas_modalidades (
+id_deportistas char(6)not null,
+id_modalidades char(2) not null,
+clasificacion tinyint not null,
+
+CONSTRAINT PK_deportistas_modalidades PRIMARY KEY(id_deportistas, id_modalidades),
+CONSTRAINT FK_deportistas_modalidades FOREIGN KEY (id_deportistas) REFERENCES deportistas (id),
+CONSTRAINT FK_deportistas_modalidades2 FOREIGN KEY (id_modalidades) REFERENCES modalidades (id),
 )
 
 CREATE TABLE comites(
@@ -78,4 +78,4 @@ apellidos varchar(15) null,
 CONSTRAINT FK_delegados_comite FOREIGN KEY (id_comite) REFERENCES comites(id)
 	ON DELETE NO ACTION ON UPDATE CASCADE,
 CONSTRAINT FK_delegados_deportes FOREIGN KEY (id_deporte) REFERENCES deportes(id)
- )
+)
