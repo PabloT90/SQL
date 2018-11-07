@@ -2,9 +2,9 @@ CREATE DATABASE Universidades
 GO
 USE Universidades
 GO
-
+--drop database universidades
 CREATE TABLE universidades(
-id tinyint not null CONSTRAINT PK_universidades PRIMARY KEY,
+id char(5) not null CONSTRAINT PK_universidades PRIMARY KEY,
 nombre varchar(15) null,
 fundacion datetime null,
 )
@@ -21,8 +21,8 @@ nombre varchar(10) null,
 
 CREATE TABLE deportistas(
 id tinyint not null CONSTRAINT PK_deportistas PRIMARY KEY,
-id_universidad char(8) not null,
-id_deportes char(3) not null,
+id_universidad char(5) not null,
+id_deportes tinyint not null,
 nombre varchar(10) null,
 apellidos varchar(15) null,
 edad datetime not null,
@@ -46,13 +46,13 @@ CONSTRAINT FK_deportistas_modalidades2 FOREIGN KEY (id_modalidades) REFERENCES m
 )
 
 CREATE TABLE comites(
-id tinyint not null CONSTRAINT PK_comites PRIMARY KEY,
-id_universidad tinyint not null,
+id char(5) not null CONSTRAINT PK_comites PRIMARY KEY,
+id_universidad char(5) not null,
 domicilio varchar(20) null,
 telefono char(9) null,
 
 CONSTRAINT FK_comites_universidades FOREIGN KEY (id_universidad) REFERENCES universidades(id)
-	ON DELETE CASCADE ON UPDATE CASCADE
+	ON DELETE CASCADE ON UPDATE CASCADE-- Ojo aqui, ON DELETE CASCADE porque se trata de una entidad debil.
 )
 
 CREATE TABLE presidentes(
@@ -62,7 +62,7 @@ apellidos varchar(15) null,
 )
 
 CREATE TABLE presidente_comite(
-id_comite tinyint not null,
+id_comite char(5) not null,
 id_presidente tinyint not null,
 
 CONSTRAINT PK_presidente_comite PRIMARY KEY (id_comite, id_presidente),
@@ -74,7 +74,7 @@ CONSTRAINT FK_presidente_comite3 FOREIGN KEY (id_presidente) REFERENCES presiden
 
 CREATE TABLE delegados(
 id tinyint not null CONSTRAINT PK_delegados PRIMARY KEY,
-id_comite tinyint not null,
+id_comite char(5) not null,
 id_deporte tinyint not null,
 nombre varchar(10) null,
 apellidos varchar(15) null,
