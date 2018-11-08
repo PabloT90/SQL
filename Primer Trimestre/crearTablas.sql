@@ -87,3 +87,4 @@ CONSTRAINT FK_delegados_deportes FOREIGN KEY (id_deporte) REFERENCES deportes(id
 
 --Si es reflexiva es no action las 2.
 --Si es debil las 2 son cascade.
+--Si es 1:N y al propagar la clave  del 1(depende de esta cardinalidad)  al N, debera ser null o not null segun la cardinalidad.
