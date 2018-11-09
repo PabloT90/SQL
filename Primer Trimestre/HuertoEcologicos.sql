@@ -63,4 +63,3 @@ CONSTRAINT fk_remesa_distribuidora FOREIGN KEY (id_distribuidora) REFERENCES dis
 
 --Cuando tenemos una 1:1 y las cardinalidades son (1,1) desde donde propagamos la clave, su clave foranea debe ser NOT NULL.
 --Recordar poner las restriccion UNIQUE cuando se trata de 1:1
---Preguntar cuando cambiar ON DELETE NO ACTION ON UPDATE CASCADE
