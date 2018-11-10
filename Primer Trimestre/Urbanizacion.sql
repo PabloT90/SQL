@@ -48,9 +48,8 @@ esAbonado bit not null,
 CONSTRAINT FK_recibos_vivienda FOREIGN KEY (id_vivienda) REFERENCES viviendas(id)
 	ON DELETE NO ACTION ON UPDATE CASCADE,
 )
-
 ALTER TABLE Personas ADD id_vivienda tinyint not null
-	CONSTRAINT FK_personas_viviendas FOREIGN KEY (id_vivienda) REFERENCES viviendas(id)
+ALTER TABLE Personas ADD CONSTRAINT FK_personas_viviendas FOREIGN KEY (id_vivienda) REFERENCES viviendas(id)
 		ON DELETE NO ACTION ON UPDATE NO ACTION --Si ambas no fuesen NO ACTION se podrian producir ciclos.
 
 --Creo que me falta poner UNIQUE en la generalizacion...
