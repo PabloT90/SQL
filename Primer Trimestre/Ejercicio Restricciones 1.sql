@@ -32,12 +32,12 @@ CONSTRAINT ck_numeroMediano check(NumeroIntermedio %2 !=0 and (NumeroIntermedio 
 CONSTRAINT ck_fechaNacimiento check (FechaNac < CURRENT_TIMESTAMP),
 
 --El nivel de inglés debe tener uno de los siguientes valores: A0, A1, A2, B1, B2, C1 o C2.
-
+CONSTRAINT ck_NivelIngles check (NivelIngles in ('A0','A1','A2','B1','B2','C1','C2')),
 
 --Historieta no puede contener las palabras "oscuro" ni "apocalipsis"
-
+CONSTRAINT ck_Historieta check (historieta not in('oscuro','apocalipsis')),
 
 --Temperatura debe estar comprendido entre 32.5 y 44.
-
+--¿Temperatura?
 ) 
 GO
