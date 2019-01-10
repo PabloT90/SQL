@@ -13,15 +13,23 @@ SELECT FirstName,LastName, city, (year(CURRENT_TIMESTAMP-BirthDate)) - 1900 AS [
 	ORDER BY HireDate desc
 
 --4. Nombre y precio de cada producto, ordenado de mayor a menor precio.
-
+SELECT ProductName, UnitPrice FROM Products
+	ORDER BY UnitPrice DESC
 
 --5. Nombre de la compañía y dirección completa de cada proveedor de algún país de América del Norte.
-
+SELECT * FROM Suppliers
+SELECT CompanyName, Address FROM Suppliers
+	WHERE Country IN ('USA','Canada')
 
 --6. Nombre del producto, número de unidades en stock y valor total del stock, de los
 --productos que no sean de la categoría 4.
-
+SELECT * FROM Products
+SELECT ProductName, UnitsInStock, UnitsInStock*UnitPrice AS [Valor Stock] FROM Products
+	WHERE CategoryID <> 4
 
 --7. Clientes (Nombre de la Compañía, dirección completa, persona de contacto) que no
 --residan en un país de América del Norte y que la persona de contacto no sea el
---propietario de la compañía 
+--propietario de la compañía 
+SELECT * FROM Customers
+SELECT CompanyName, Address, ContactName FROM Customers
+	WHERE Country NOT IN ('USA','Canada') AND ContactTitle NOT IN ('Owner')
