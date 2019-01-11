@@ -34,12 +34,25 @@ SELECT DISTINCT IDEnfermedad FROM BI_Mascotas_Enfermedades
 		(CURRENT_TIMESTAMP,38, 12,'PH002')
 --Todos los perros del cliente 104 han enfermado el 20 de diciembre de sarna.
 	--Escribe un SELECT para averiguar los códigos de todos los perros del cliente 104
-
+	
 	SELECT Codigo FROM BI_Mascotas
 		WHERE CodigoPropietario = 104 
 	--Con los códigos obtenidos en la consulta anterior, escribe los INSERT correspondientes en la tabla BI_Mascotas_Enfermedades
+	SELECT * FROM BI_Mascotas_Enfermedades
+	SELECT * FROM BI_Enfermedades --Tener en cuenta el IDEnfermedad de la sarna.
 
+	begin tran
+	INSERT INTO BI_Mascotas_Enfermedades VALUES
+		(4,'GH004','2014-06-02','2014-07-01'),
+		(4,'PH004','2014-06-04','2014-07-01'),
+		(4,'PH104','2014-06-06','2014-07-01'),
+		(4,'PM004','2014-06-08','2014-07-01')
+
+		commit tran
 --Escribe una consulta para obtener el nombre, especie y raza de todas las mascotas, ordenados por edad.
-
---Escribe los códigos de todas las mascotas que han ido alguna vez al veterinario un lunes o un viernes. Para averiguar el dia de la semana de una fecha se usa la función DATEPART (WeekDay, fecha) que devuelve un entero entre 1 y 7 donde el 1 corresponde al lunes, el dos al martes y así sucesivamente.
+SELECT Alias, Especie, Raza, FechaNacimiento FROM BI_Mascotas
+	ORDER BY FechaNacimiento
+--Escribe los códigos de todas las mascotas que han ido alguna vez al veterinario un lunes o un viernes.
+--Para averiguar el dia de la semana de una fecha se usa la función DATEPART (WeekDay, fecha) que devuelve un entero 
+--entre 1 y 7 donde el 1 corresponde al lunes, el dos al martes y así sucesivamente.
 --NOTA: El servidor se puede configurar para que la semana empiece en lunes o domingo.
