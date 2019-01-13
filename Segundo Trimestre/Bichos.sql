@@ -56,3 +56,6 @@ SELECT Alias, Especie, Raza, FechaNacimiento FROM BI_Mascotas
 --Para averiguar el dia de la semana de una fecha se usa la función DATEPART (WeekDay, fecha) que devuelve un entero 
 --entre 1 y 7 donde el 1 corresponde al lunes, el dos al martes y así sucesivamente.
 --NOTA: El servidor se puede configurar para que la semana empiece en lunes o domingo.
+SELECT * FROM BI_Visitas
+SELECT Mascota, Fecha FROM BI_Visitas
+	WHERE DATEPART(DW,Fecha) = 1 OR DATEPART(DW,Fecha) = 5
