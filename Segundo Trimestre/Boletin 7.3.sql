@@ -59,6 +59,15 @@ UPDATE JOBS
 ALTER TABLE JOBS ADD CONSTRAINT CK__jobs__min_lvl__2C3393D1 CHECK(min_lvl >=90)
 
 --Crea una nueva editorial (publihers) con ID 9908, nombre Mostachon Books y sede en Utrera.
-
+SELECT * FROM publishers
+begin tran
+INSERT INTO publishers (pub_id,pub_name,city) VALUES
+	(9908,'Mostachon Book','utrera')
+commit tran
 
 --Cambia el nombre de la editorial con sede en Alemania para que se llame "Machen Wücher" y traslasde su sede a Stuttgart
+begin tran
+UPDATE publishers
+	SET pub_name = 'Machen Wücher' , city = 'Stuttgart'
+		WHERE country = 'Germany' --Lo puede hacer de esta forma porque ahora mismo solo hay 1 editorial con esas caracteristicas.
+commit tran
