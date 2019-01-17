@@ -15,16 +15,25 @@ SELECT name,ProductID,ProductNumber, size,Weight FROM Production.Product
 	WHERE YEAR(SellStartDate)=2002 AND MONTH(SellStartDate)=8 or Weight < 2000
 
 --4.Margen de beneficio de cada producto (Precio de venta menos el coste), y porcentaje que supone respecto del precio de venta.
-
+SELECT * FROM Production.Product
+SELECT ListPrice-StandardCost AS[Beneficio],(ListPrice*100)/StandardCost-100 AS[Porcentaje Beneficio] FROM Production.Product
+	WHERE StandardCost <> 0 --Para no obtener una division entre 0
+		ORDER BY [Porcentaje Beneficio]
 
 --5.Número de productos de cada categoría
-
+SELECT * FROM Production.Product
+SELECT ProductSubcategoryID, COUNT(ProductSubcategoryID) AS[Productos Categoria] FROM Production.Product
+	GROUP BY ProductSubcategoryID
+		ORDER BY ProductSubcategoryID
 
 --6.Igual a la anterior, pero considerando las categorías generales (categorías de categorías).
-
+--No entiendo que pide.
 
 --7.Número de unidades vendidas de cada producto cada año.
-
+SELECT * FROM Sales.SalesOrderDetail
+SELECT ProductID,YEAR(ModifiedDate) AS[Ano], COUNT(ProductID)+SUM(OrderQty) AS[Unidades vendidas] FROM Sales.SalesOrderDetail
+	GROUP BY ProductID, YEAR(ModifiedDate)
+		ORDER BY YEAR(ModifiedDate),ProductID --No vea si ha costado
 
 --8.Nombre completo, compañía y total facturado a cada cliente
 
