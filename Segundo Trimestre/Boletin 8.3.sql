@@ -28,6 +28,7 @@ SELECT ProductSubcategoryID, COUNT(ProductSubcategoryID) AS[Productos Categoria]
 
 --6.Igual a la anterior, pero considerando las categorías generales (categorías de categorías).
 --No entiendo que pide.
+SELECT * FROM Production.ProductCategory
 
 --7.Número de unidades vendidas de cada producto cada año.
 SELECT * FROM Sales.SalesOrderDetail
@@ -36,7 +37,12 @@ SELECT ProductID,YEAR(ModifiedDate) AS[Ano], COUNT(ProductID)+SUM(OrderQty) AS[U
 		ORDER BY YEAR(ModifiedDate),ProductID --No vea si ha costado
 
 --8.Nombre completo, compañía y total facturado a cada cliente
-
+SELECT * FROM Person.Person
+SELECT * FROM Sales.Customer
+SELECT * FROM Sales.Store
+SELECT P.FirstName, P.LastName, S.Name FROM Person.Person AS[P] 
+INNER JOIN Sales.Customer AS[C] ON P.BusinessEntityID = C.PersonID
+INNER JOIN Sales.Store AS[S] ON C.StoreID = S.BusinessEntityID
 
 --9.Número de producto, nombre y precio de todos aquellos en cuya descripción aparezcan las palabras "race”, "competition” o 
 --"performance”

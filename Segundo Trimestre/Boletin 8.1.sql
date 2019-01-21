@@ -50,5 +50,5 @@ SELECT SupplierID, COUNT(SupplierID) AS[Numero pedidos] FROM Products
 
 --10. ID de cada proveedor y número de productos distintos que nos suministra.
 SELECT * FROM Products
-SELECT SupplierID, COUNT(CategoryID) AS[Nº Productos] FROM Products
+SELECT SupplierID, COUNT( DISTINCT CategoryID) AS[Nº Productos] FROM Products
 	GROUP BY SupplierID
