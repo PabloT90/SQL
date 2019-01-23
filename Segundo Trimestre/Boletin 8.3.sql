@@ -32,9 +32,9 @@ SELECT * FROM Production.ProductCategory
 
 --7.Número de unidades vendidas de cada producto cada año.
 SELECT * FROM Sales.SalesOrderDetail
-SELECT ProductID,YEAR(ModifiedDate) AS[Ano], COUNT(ProductID)+SUM(OrderQty) AS[Unidades vendidas] FROM Sales.SalesOrderDetail
+SELECT ProductID,YEAR(ModifiedDate) AS[Ano], SUM(OrderQty) AS[Unidades vendidas] FROM Sales.SalesOrderDetail
 	GROUP BY ProductID, YEAR(ModifiedDate)
-		ORDER BY YEAR(ModifiedDate),ProductID --No vea si ha costado
+		ORDER BY YEAR(ModifiedDate),ProductID
 
 --8.Nombre completo, compañía y total facturado a cada cliente
 SELECT * FROM Person.Person
