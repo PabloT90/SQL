@@ -49,6 +49,22 @@ SELECT DISTINCT COUNT(C.ContactName) AS[Numero Clientes], P.ProductName FROM Cus
 --10. Producto superventas de cada año, indicando año, nombre del producto,
 --categoría y cifra total de ventas.
 
+--Ventas de los productos por año
+SELECT * FROM Orders
+SELECT * FROM [Order Details]
+SELECT * FROM Products
+
+SELECT P.ProductName, P.CategoryID, YEAR(O.OrderDate) AS[Año],SUM(OD.Quantity*OD.UnitPrice) AS[Importe] FROM Products AS[P]
+	INNER JOIN [Order Details] AS[OD] ON P.ProductID = OD.ProductID
+	INNER JOIN Orders AS[O] ON OD.OrderID = O.OrderID
+	INNER JOIN( SELECT Prod.Año, MAX(Prod.Importe) AS[Importe Maximo de un producto] FROM(
+		SELECT P.ProductID, YEAR(O.OrderDate) AS[Año], SUM(OD.Quantity*OD.UnitPrice) AS[importe] FROM Products AS[P]
+		INNER JOIN[Order Details] AS[OD] ON P.ProductID = OD.ProductID
+		INNER JOIN Orders AS[O] on OD.OrderID = O.OrderID
+			GROUP BY P.ProductID, YEAR(O.OrderDate))AS [Prod]
+		GROUP BY Prod.Año) AS[ORR] ON YEAR(O.OrderDate) = ORR.Año
+		GROUP BY P.ProductName, P.CategoryID, YEAR(OrderDate), ORR.[Importe Maximo de un producto]
+		HAVING SUM(OD.Quantity*OD.UnitPrice) = ORR.[Importe Maximo de un producto]
 
 --11. Cifra de ventas de cada producto en el año 97 y su aumento o disminución
 --respecto al año anterior en US $ y en %.
