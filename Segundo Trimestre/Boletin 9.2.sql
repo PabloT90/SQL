@@ -43,9 +43,6 @@ SELECT DISTINCT E.FirstName, E.LastName, P.ProductName FROM Employees AS[E]
 --“Carnarvon Tigers”.
 --Despues hago la diferencia entre el total y los obtenidos abajo.
 SELECT DISTINCT E.FirstName, E.LastName FROM Employees AS[E]
-	INNER JOIN Orders AS[O] ON E.EmployeeID = O.EmployeeID
-	INNER JOIN [Order Details] AS[OD] ON O.OrderID = OD.OrderID
-	INNER JOIN Products AS[P] ON OD.ProductID = P.ProductID
 EXCEPT
 --Primero busco los que lo han vendido.
 SELECT DISTINCT E.FirstName, E.LastName FROM Employees AS[E]
@@ -80,12 +77,12 @@ SELECT * FROM Products
 SELECT * FROM [Order Details]
 SELECT * FROM Orders
 SELECT * FROM Customers
-SELECT P.ProductName, C.Country, COUNT(DISTINCT O.CustomerID) AS[Numero Clientes] FROM Products AS[P]
+SELECT P.ProductName, C.Country, COUNT(O.ShipCountry) AS[Numero Clientes] FROM Products AS[P]
 	INNER JOIN [Order Details] AS[OD] ON P.ProductID = OD.ProductID
 	INNER JOIN Orders AS[O] ON OD.OrderID = O.OrderID
 	INNER JOIN Customers AS[C] ON O.CustomerID = C.CustomerID
 		GROUP BY P.ProductName, C.Country
-		HAVING COUNT(DISTINCT O.CustomerID) > 1
+		HAVING COUNT(O.ShipCountry) > 1
 
 --9. Total de ventas (US$) en cada país cada año.
 SELECT * FROM Orders
@@ -117,8 +114,27 @@ HAVING SUM(OD.Quantity) = ORR.[Maximo de un producto]
 
 --11. Cifra de ventas de cada producto en el año 97 y su aumento o disminución
 --respecto al año anterior en US $ y en %.
+--Ventas de cada producto en el 97
+GO
+CREATE VIEW [VentasDel97] AS
+SELECT P.ProductName, SUM(OD.Quantity*OD.Quantity)AS[Ventas97] FROM Products AS[P]
+	INNER JOIN [Order Details] AS[OD] ON P.ProductID = OD.ProductID
+	INNER JOIN Orders AS[O] ON OD.OrderID = O.OrderID
+		WHERE YEAR(OrderDate) = 1997
+			GROUP BY P.ProductName
+GO
+--Ventas de cada producto en el 96
+GO
+CREATE VIEW  [VentasDel96] AS
+SELECT P.ProductName, SUM(OD.Quantity*OD.Quantity)AS[Ventas96] FROM Products AS[P]
+	INNER JOIN [Order Details] AS[OD] ON P.ProductID = OD.ProductID
+	INNER JOIN Orders AS[O] ON OD.OrderID = O.OrderID
+		WHERE YEAR(OrderDate) = 1996
+			GROUP BY P.ProductName
+GO
 
-
+SELECT V97.ProductName,(V97.[Ventas97]-V96.[Ventas96]) AS[Diferencia] FROM [VentasDel97] AS V97
+	INNER JOIN [VentasDel96] AS V96 ON V97.ProductName = V96.ProductName
 --12. Mejor cliente (el que más nos compra) de cada país.
 SELECT * FROM Customers
 SELECT * FROM Orders
