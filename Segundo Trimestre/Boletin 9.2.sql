@@ -76,10 +76,24 @@ SELECT C.CategoryName, SUM(OD.Quantity*OD.UnitPrice) AS[Importe] FROM Categories
 --8. Productos que han comprado más de un cliente del mismo país, indicando el
 --nombre del producto, el país y el número de clientes distintos de ese país que
 --lo han comprado.
-
+SELECT * FROM Products
+SELECT * FROM [Order Details]
+SELECT * FROM Orders
+SELECT * FROM Customers
+SELECT P.ProductName, C.Country, COUNT(DISTINCT O.CustomerID) AS[Numero Clientes] FROM Products AS[P]
+	INNER JOIN [Order Details] AS[OD] ON P.ProductID = OD.ProductID
+	INNER JOIN Orders AS[O] ON OD.OrderID = O.OrderID
+	INNER JOIN Customers AS[C] ON O.CustomerID = C.CustomerID
+		GROUP BY P.ProductName, C.Country
+		HAVING COUNT(DISTINCT O.CustomerID) > 1
 
 --9. Total de ventas (US$) en cada país cada año.
-
+SELECT * FROM Orders
+SELECT * FROM [Order Details]
+SELECT SUM(OD.Quantity * OD.UnitPrice) AS[Ventas], O.ShipCountry, YEAR(O.OrderDate) AS[Año] FROM Orders AS[O]
+	INNER JOIN [Order Details] AS[OD] ON O.OrderID = OD.OrderID
+		GROUP BY O.ShipCountry, YEAR(O.OrderDate)
+			ORDER BY Año
 
 --10. Producto superventas de cada año, indicando año, nombre del producto,
 --categoría y cifra total de ventas.
@@ -109,6 +123,7 @@ HAVING SUM(OD.Quantity) = ORR.[Maximo de un producto]
 SELECT * FROM Customers
 SELECT * FROM Orders
 SELECT * FROM [Order Details]
+--No muestra el que mas dinero se ha gastado, sino el que mas ha comprado (creo que se refiere a esto ultimo)
 --Mostramos el nombre del cliente 
 SELECT C.ContactName,SUM(OD.Quantity) AS[Compras], C.Country FROM Customers AS[C]
 	INNER JOIN Orders AS[O] ON C.CustomerID = O.CustomerID
