@@ -158,14 +158,38 @@ HAVING SUM(OD.Quantity) = Maxi.[Compras Pais]
 
 --13. Número de productos diferentes que nos compra cada cliente. Incluye el
 --nombre y apellidos del cliente y su dirección completa.
-
+SELECT * FROM Customers
+SELECT * FROM Orders
+SELECT * FROM [Order Details]
+SELECT COUNT(DISTINCT OD.ProductID) AS[Productos Diferentes], C.ContactName, C.Address FROM Customers AS[C]
+	INNER JOIN Orders AS[O] ON C.CustomerID = O.CustomerID
+	INNER JOIN [Order Details] AS[OD] ON O.OrderID = OD.OrderID
+		GROUP BY C.ContactName, C.Address
 
 --14. Clientes que nos compran más de cinco productos diferentes.
-
+SELECT COUNT(DISTINCT OD.ProductID) AS[Productos Diferentes], C.ContactName FROM Customers AS[C]
+	INNER JOIN Orders AS[O] ON C.CustomerID = O.CustomerID
+	INNER JOIN [Order Details] AS[OD] ON O.OrderID = OD.OrderID
+		GROUP BY C.ContactName
+			HAVING COUNT(DISTINCT OD.ProductID) > 5
 
 --15. Vendedores (nombre y apellidos) que han vendido una mayor cantidad que la
 --media en US $ en el año 97.
-
+--Por ultimo muestro los que superen la media
+SELECT SUM(OD.Quantity) AS[Media Vendida], E.FirstName, E.LastName FROM Employees AS[E]
+			INNER JOIN Orders AS[O] ON E.EmployeeID = O.EmployeeID
+			INNER JOIN [Order Details] AS[OD] ON O.OrderID = OD.OrderID
+			WHERE YEAR(O.OrderDate) = 1997
+			GROUP BY E.LastName, E.FirstName
+			HAVING SUM(OD.Quantity) > (
+	--Ahora calculo la media que hacen
+	SELECT AVG(Total.[Media Vendida]) AS[Media]FROM (
+		--Primero calculo lo que ha vendido cada uno de los vendedores
+		SELECT SUM(OD.Quantity) AS[Media Vendida], E.FirstName, E.LastName FROM Employees AS[E]
+			INNER JOIN Orders AS[O] ON E.EmployeeID = O.EmployeeID
+			INNER JOIN [Order Details] AS[OD] ON O.OrderID = OD.OrderID
+				WHERE YEAR(O.OrderDate) = 1997
+				GROUP BY E.LastName, E.FirstName) AS[Total])
 
 --16. Empleados que hayan aumentado su cifra de ventas más de un 10% entre dos
 --años consecutivos, indicando el año en que se produjo el aumento.
