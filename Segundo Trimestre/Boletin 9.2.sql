@@ -193,4 +193,11 @@ SELECT SUM(OD.Quantity) AS[Media Vendida], E.FirstName, E.LastName FROM Employee
 
 --16. Empleados que hayan aumentado su cifra de ventas más de un 10% entre dos
 --años consecutivos, indicando el año en que se produjo el aumento.
-
+SELECT * FROM Employees
+SELECT * FROM Orders
+--
+--Cifra de ventas de cada empleado cada año
+SELECT SUM(OD.Quantity*OD.UnitPrice) AS[Cifras Ventas], E.EmployeeID, YEAR(O.OrderDate) AS[Año] FROM Employees AS[E]
+	INNER JOIN Orders AS[O] ON E.EmployeeID = O.EmployeeID
+	INNER JOIN [Order Details] AS[OD] ON O.OrderID = OD.OrderID
+		GROUP BY E.EmployeeID, YEAR(O.OrderDate)
