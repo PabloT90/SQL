@@ -19,7 +19,19 @@ SELECT COUNT(FC.Cod_Festival) AS[Veces Cantadas], C.Nombre_Artistico FROM F_Cant
 --Ejercicio 3
 --Número de cantaores mayores de 30 años que han actuado cada año en cada peña. Se
 --contará la edad que tenían en el año de la actuación.
-
+SELECT * FROM F_Cantaores
+SELECT * FROM F_Actua
+SELECT * FROM F_Penhas
+--Numero de cantaores mayores de 30 años que ha habido cada año en cada peña
+SELECT CA.Año, count(CA.Nombre) AS[Numero Cantantes], CA.Nombre FROM (
+--Año de los cantaores cuando actuaron. //No sabemos la fecha exacta en la que nacio cada cantaor por tanto esta es la forma que he visto mejor.
+	SELECT (YEAR(A.Fecha)-C.Anno) AS[Edad], C.Nombre_Artistico, YEAR(A.Fecha) AS[Año], P.Nombre FROM F_Cantaores AS[C]
+		INNER JOIN F_Actua AS[A] ON C.Codigo = A.Cod_Cantaor
+		INNER JOIN F_Penhas AS[P] ON A.Cod_Penha = P.Codigo
+	GROUP BY C.Nombre_Artistico, C.Anno, A.Fecha, P.Nombre) AS[CA]
+WHERE CA.Edad > 30
+GROUP BY CA.Año, CA.Nombre
+ORDER BY CA.Año, CA.Nombre
 
 --Ejercicio 4
 --Cantaores (nombre, apellidos y nombre artístico) que hayan actuado más de dos veces en
