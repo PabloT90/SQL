@@ -2,18 +2,26 @@
 SELECT * FROM titles
 SELECT * FROM titleauthor
 SELECT * FROM authors
-SELECT T.type, T.title FROM titles AS[T]
+SELECT DISTINCT T.type, T.title FROM titles AS[T]
 	INNER JOIN titleauthor AS[TA] ON T.title_id = TA.title_id
 	INNER JOIN authors AS[A] ON TA.au_id = A.au_id
 	WHERE A.State = 'CA'
 
 --2. Título y tipo de todos los libros en los que ninguno de los autores vive en California (CA).
+SELECT type, title FROM titles
+except
 SELECT T.type, T.title FROM titles AS[T]
 	INNER JOIN titleauthor AS[TA] ON T.title_id = TA.title_id
 	INNER JOIN authors AS[A] ON TA.au_id = A.au_id
-	WHERE A.state != 'CA'
+	WHERE A.state = 'CA'
 
 --3. Número de libros en los que ha participado cada autor, incluidos los que no han publicado nada.
+SELECT * FROM Titles
+SELECT * FROM titleauthor
+SELECT DISTINCT A.au_id, COUNT(TA.title_id) as[Numero Libros] FROM titles AS[T]
+	LEFT JOIN titleauthor AS[TA] ON T.title_id = TA.title_id
+	LEFT JOIN authors AS[A] ON A.au_id = TA.au_id
+	GROUP BY A.au_id
 --4. Número de libros que ha publicado cada editorial, incluidas las que no han publicado ninguno.
 --5. Número de empleados de cada editorial.
 --6. Calcular la relación entre número de ejemplares publicados y número de empleados de cada editorial, 
@@ -26,7 +34,6 @@ SELECT P.pub_name,CAST(COUNT(DISTINCT T.title_id)AS REAL)/COUNT(DISTINCT E.emp_i
 	INNER JOIN employee AS E ON P.pub_id = E.pub_id
 	LEFT JOIN titles AS T ON T.pub_id = P.pub_id
 		GROUP BY P.pub_name
-
 
 --7. Nombre, Apellidos y ciudad de todos los autores que han trabajado para la editorial "Binnet & Hardley” o "Five Lakes Publishing”
 --8. Empleados que hayan trabajado en alguna editorial que haya publicado algún libro en el que alguno de los autores fuera Marjorie Green o Michael O'Leary.
