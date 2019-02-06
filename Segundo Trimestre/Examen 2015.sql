@@ -8,6 +8,7 @@ SELECT COUNT(FC.Cod_Festival) AS[Veces Cantadas], C.Nombre_Artistico FROM F_Cant
 	LEFT JOIN F_Festivales AS[F] ON FC.Cod_Festival = F.Cod AND F.Provincia = 'CA'
 		--WHERE F.Provincia = 'CA'
 		GROUP BY C.Nombre_Artistico
+
 --Si le ponemos la condicion en el WHERE estamos eliminando los que no han cantado en Cadiz.
 
 --Ejercicio 2
@@ -37,7 +38,22 @@ ORDER BY CA.Año, CA.Nombre
 --Cantaores (nombre, apellidos y nombre artístico) que hayan actuado más de dos veces en
 --peñas de la provincia de Sevilla y canten Fandangos o Bulerías. Sólo se incluyen las
 --actuaciones directas en Peñas, no los festivales.
-
+SELECT * FROM F_Cantaores
+SELECT * FROM F_Actua
+SELECT * FROM F_Penhas
+SELECT * FROM F_Provincias
+--Cantaores de sevilla que han actuado mas de 2 veces
+SELECT COUNT(CS.Nombre_Artistico) AS[Actuaciones],CS.Nombre, CS.Apellidos FROM (
+	--Cantaores que han actuado en penhas de Sevilla que canten Fandangos o Bulerías
+	SELECT Provincia, C.Nombre, C.Apellidos, C.Nombre_Artistico FROM F_Palos AS[PA]
+		INNER JOIN F_Palos_Cantaor AS[PC] ON PA.Cod_Palo = PC.Cod_Palo
+		INNER JOIN F_Cantaores AS[C] ON PC.Cod_cantaor = C.Codigo
+		INNER JOIN F_Actua AS[A] ON C.Codigo = A.Cod_Cantaor
+		INNER JOIN F_Penhas AS[P] ON A.Cod_Penha = P.Codigo
+		INNER JOIN F_Provincias AS[PR] ON P.Cod_provincia = PR.Cod_Provincia
+		WHERE Provincia = 'Sevilla' AND PA.Cod_Palo IN('FH','BU')) AS[CS]
+GROUP BY CS.Apellidos, CS.Nombre
+HAVING COUNT(CS.Nombre_Artistico) > 2
 
 --Ejercicio 5
 --Número de actuaciones que se han celebrado en cada peña, incluyendo actuaciones directas
