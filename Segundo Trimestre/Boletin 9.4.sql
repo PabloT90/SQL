@@ -37,8 +37,22 @@ SELECT C.Nombre, C.Direccion, COUNT(M.CodigoPropietario) AS[Nº Mascotas] FROM BI
 SELECT * FROM BI_Enfermedades
 SELECT * FROM BI_Mascotas_Enfermedades
 SELECT * FROM BI_Mascotas
+--Lo que nos pide
+SELECT E.Nombre, COUNT(ME.IDEnfermedad) AS[Numero Enfermos], M.Especie  FROM  BI_Enfermedades AS[E]
+			INNER JOIN BI_Mascotas_Enfermedades AS[ME] ON E.ID = ME.IDEnfermedad
+			INNER JOIN BI_Mascotas AS[M] ON ME.Mascota = M.Codigo
+			INNER JOIN (
+	--La mas comun y los casos
+	SELECT DISTINCT ET.Especie, MAX([Numero Enfermos]) AS[Casos] FROM(
+		--Enfermedades totales de cada especie
+		SELECT E.Nombre, COUNT(*) AS[Numero Enfermos], M.Especie  FROM  BI_Enfermedades AS[E]
+			INNER JOIN BI_Mascotas_Enfermedades AS[ME] ON E.ID = ME.IDEnfermedad
+			INNER JOIN BI_Mascotas AS[M] ON ME.Mascota = M.Codigo
+		GROUP BY M.Especie, E.Nombre) AS[ET]
+	GROUP BY ET.Especie) AS[MA] ON M.Especie = MA.Especie
+GROUP BY M.Especie, E.Nombre, MA.Casos
+HAVING COUNT(ME.IDEnfermedad) = MA.Casos
 
---Enfermedad de cada especie
 --8.Duración media, en días, de cada enfermedad, desde que se detecta hasta que se cura. Incluye solo los casos en que el animal se haya curado. 
 --Se entiende que una mascota se ha curado si tiene fecha de curación y está viva o su fecha de fallecimiento es posterior a la fecha de curación.
 
@@ -53,3 +67,6 @@ SELECT * FROM BI_Mascotas
 --Incluye nombre de la mascota, especie, fecha de las dos consultas sucesivas e incremento o disminución de peso.
 SELECT * FROM BI_Visitas
 SELECT * FROM BI_Mascotas
+SELECT Fecha, V.Mascota FROM BI_Mascotas AS[M]
+	INNER JOIN BI_Visitas AS[V] ON V.Mascota = M.Codigo
+	Order by V.Mascota
