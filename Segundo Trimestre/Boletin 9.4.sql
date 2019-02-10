@@ -24,10 +24,32 @@ SELECT C.Nombre, C.Direccion, COUNT(M.CodigoPropietario) AS[Nº Mascotas] FROM BI
 		GROUP BY C.Nombre, Direccion
 
 --4.Número de mascotas de cada especie de cada cliente. Incluye nombre completo y dirección del cliente.
-
+SELECT * FROM BI_Clientes
+SELECT * FROM BI_Mascotas
+SELECT M.Especie, COUNT(CodigoPropietario) AS[Numero Mascotas], Nombre, Direccion FROM BI_Mascotas AS[M]
+	INNER JOIN BI_Clientes AS[C] ON M.CodigoPropietario = C.Codigo
+	GROUP BY M.Especie, Nombre, Direccion
+	ORDER BY Nombre
+--EXTRA: Numero de mascotas que hay de una especie recibida por parametro.
+GO
+CREATE FUNCTION NumMascotasXEspecie(@especie VARCHAR(30))
+RETURNS TABLE AS
+RETURN(
+		SELECT @especie AS[Especie], COUNT(*) AS[Numero Mascotas] FROM BI_Mascotas
+			WHERE especie = @especie
+			GROUP BY Especie
+)
+GO
+SELECT * FROM NumMascotasXEspecie ('gato') --Asi llamariamos a la funcion./
 
 --5.Número de mascotas de cada especie que han sufrido cada enfermedad.
-
+SELECT * FROM BI_Enfermedades
+SELECT * FROM BI_Mascotas_Enfermedades
+SELECT * FROM BI_Mascotas
+SELECT E.Nombre, COUNT(IDEnfermedad) AS[Mascotas Enfermas], M.Especie FROM BI_Mascotas AS[M]
+	INNER JOIN BI_Mascotas_Enfermedades AS[ME] ON M.Codigo = me.Mascota
+	INNER JOIN BI_Enfermedades AS[E] ON ME.IDEnfermedad = E.ID
+	GROUP BY M.Especie, E.Nombre
 
 --6.Número de mascotas de cada especie que han sufrido cada enfermedad incluyendo las enfermedades que no ha sufrido ninguna 
 --mascota de alguna especie.
