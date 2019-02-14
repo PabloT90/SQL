@@ -51,7 +51,7 @@ SELECT COUNT(CS.Nombre_Artistico) AS[Actuaciones],CS.Nombre, CS.Apellidos FROM (
 		INNER JOIN F_Actua AS[A] ON C.Codigo = A.Cod_Cantaor
 		INNER JOIN F_Penhas AS[P] ON A.Cod_Penha = P.Codigo
 		INNER JOIN F_Provincias AS[PR] ON P.Cod_provincia = PR.Cod_Provincia
-		WHERE Provincia = 'Sevilla' AND PA.Cod_Palo IN('FH','BU')) AS[CS]
+		WHERE P.Cod_provincia = 'SE' AND PA.Cod_Palo IN('FH','BU')) AS[CS]
 GROUP BY CS.Apellidos, CS.Nombre
 HAVING COUNT(CS.Nombre_Artistico) > 2
 

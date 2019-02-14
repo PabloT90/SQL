@@ -80,9 +80,47 @@ HAVING COUNT(ME.IDEnfermedad) = MA.Casos
 
 
 --9.Número de veces que ha acudido a consulta cada cliente con alguna de sus mascotas. Incluye nombre y apellidos del cliente.
+SELECT * FROM BI_Clientes
+SELECT * FROM BI_Mascotas
+SELECT * FROM BI_Visitas
 
-
+SELECT C.Nombre, COUNT(Mascota) AS[Veces Visitada] FROM BI_Clientes AS[C]
+	INNER JOIN BI_Mascotas AS[M] ON C.Codigo = M.CodigoPropietario
+	INNER JOIN BI_Visitas AS[V] ON M.Codigo = V.Mascota
+	GROUP BY Nombre
 --10.Número de visitas a las que ha acudido cada mascota, fecha de su primera y de su última visita
+
+--Cantidad total de visitas de cada mascota
+GO
+CREATE VIEW [Visitas totales] AS
+SELECT COUNT(Mascota) AS[Visitas], Mascota FROM BI_Visitas
+	GROUP BY Mascota
+GO
+
+--Ultima visita 
+GO
+CREATE VIEW [Ultima Visita] AS
+SELECT T1.Mascota, [Fecha Maxima]  FROM BI_Visitas AS[T1]
+	INNER JOIN (
+		SELECT Mascota ,MAX(FECHA) as[Fecha Maxima] FROM BI_Visitas 
+		GROUP BY Mascota
+		) AS [T2] ON T1.Mascota = T2.Mascota and T1.Fecha = T2.[Fecha Maxima]
+GO
+
+--Primera visita
+GO
+CREATE VIEW [Primera Visita] AS
+SELECT T1.Mascota, [Fecha Minima] FROM BI_Visitas AS[T1]
+	INNER JOIN (
+		SELECT Mascota ,MIN(FECHA) as[Fecha Minima] FROM BI_Visitas 
+		GROUP BY Mascota
+		) AS [T2] ON T1.Mascota = T2.Mascota and T1.Fecha = T2.[Fecha Minima]
+GO
+
+--Lo que me pide el enunciado.
+SELECT Visitas, VT.Mascota, UV.[Fecha Maxima], PV.[Fecha Minima] FROM [Visitas totales] AS[VT]
+	INNER JOIN [Ultima Visita] AS[UV] ON VT.Mascota = UV.Mascota
+	INNER JOIN [Primera Visita] AS[PV] ON PV.Mascota = UV.Mascota
 
 
 --11.Incremento (o disminución) de peso que ha experimentado cada mascota entre cada dos consultas sucesivas. 
