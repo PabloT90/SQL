@@ -23,6 +23,12 @@ SELECT DISTINCT A.au_id, COUNT(TA.title_id) as[Numero Libros] FROM titles AS[T]
 	LEFT JOIN authors AS[A] ON A.au_id = TA.au_id
 	GROUP BY A.au_id
 --4. Número de libros que ha publicado cada editorial, incluidas las que no han publicado ninguno.
+SELECT * FROM titles
+SELECT * FROM publishers
+SELECT COUNT(T.pub_id) AS[Libros Publicados], P.pub_name FROM Titles AS[T]
+	RIGHT JOIN Publishers AS[P] ON T.pub_id = P.pub_id
+ GROUP BY pub_name
+
 --5. Número de empleados de cada editorial.
 --6. Calcular la relación entre número de ejemplares publicados y número de empleados de cada editorial, 
 --incluyendo el nombre de la misma.

@@ -100,21 +100,15 @@ GO
 --Ultima visita 
 GO
 CREATE VIEW [Ultima Visita] AS
-SELECT T1.Mascota, [Fecha Maxima]  FROM BI_Visitas AS[T1]
-	INNER JOIN (
-		SELECT Mascota ,MAX(FECHA) as[Fecha Maxima] FROM BI_Visitas 
-		GROUP BY Mascota
-		) AS [T2] ON T1.Mascota = T2.Mascota and T1.Fecha = T2.[Fecha Maxima]
+SELECT Mascota ,MAX(FECHA) as[Fecha Maxima] FROM BI_Visitas 
+	GROUP BY Mascota
 GO
 
 --Primera visita
 GO
 CREATE VIEW [Primera Visita] AS
-SELECT T1.Mascota, [Fecha Minima] FROM BI_Visitas AS[T1]
-	INNER JOIN (
-		SELECT Mascota ,MIN(FECHA) as[Fecha Minima] FROM BI_Visitas 
-		GROUP BY Mascota
-		) AS [T2] ON T1.Mascota = T2.Mascota and T1.Fecha = T2.[Fecha Minima]
+SELECT Mascota ,MIN(FECHA) as[Fecha Minima] FROM BI_Visitas 
+	GROUP BY Mascota
 GO
 
 --Lo que me pide el enunciado.

@@ -177,27 +177,65 @@ SELECT COUNT(DISTINCT OD.ProductID) AS[Productos Diferentes], C.ContactName FROM
 --media en US $ en el año 97.
 --Por ultimo muestro los que superen la media
 SELECT SUM(OD.Quantity) AS[Media Vendida], E.FirstName, E.LastName FROM Employees AS[E]
-			INNER JOIN Orders AS[O] ON E.EmployeeID = O.EmployeeID
-			INNER JOIN [Order Details] AS[OD] ON O.OrderID = OD.OrderID
-			WHERE YEAR(O.OrderDate) = 1997
-			GROUP BY E.LastName, E.FirstName
-			HAVING SUM(OD.Quantity) > (
+	INNER JOIN Orders AS[O] ON E.EmployeeID = O.EmployeeID
+	INNER JOIN [Order Details] AS[OD] ON O.OrderID = OD.OrderID
+WHERE YEAR(O.OrderDate) = 1997
+GROUP BY E.LastName, E.FirstName
+HAVING SUM(OD.Quantity) > (
 	--Ahora calculo la media que hacen
 	SELECT AVG(Total.[Media Vendida]) AS[Media]FROM (
 		--Primero calculo lo que ha vendido cada uno de los vendedores
 		SELECT SUM(OD.Quantity) AS[Media Vendida], E.FirstName, E.LastName FROM Employees AS[E]
 			INNER JOIN Orders AS[O] ON E.EmployeeID = O.EmployeeID
 			INNER JOIN [Order Details] AS[OD] ON O.OrderID = OD.OrderID
-				WHERE YEAR(O.OrderDate) = 1997
-				GROUP BY E.LastName, E.FirstName) AS[Total])
+		WHERE YEAR(O.OrderDate) = 1997
+GROUP BY E.LastName, E.FirstName) AS[Total])
 
 --16. Empleados que hayan aumentado su cifra de ventas más de un 10% entre dos
 --años consecutivos, indicando el año en que se produjo el aumento.
-SELECT * FROM Employees
+SELECT * FROM Customers
 SELECT * FROM Orders
---
---Cifra de ventas de cada empleado cada año
-SELECT SUM(OD.Quantity*OD.UnitPrice) AS[Cifras Ventas], E.EmployeeID, YEAR(O.OrderDate) AS[Año] FROM Employees AS[E]
-	INNER JOIN Orders AS[O] ON E.EmployeeID = O.EmployeeID
-	INNER JOIN [Order Details] AS[OD] ON O.OrderID = OD.OrderID
-		GROUP BY E.EmployeeID, YEAR(O.OrderDate)
+SELECT * FROM [Order Details]
+
+--Ventas de cada empleado cada año
+GO
+CREATE VIEW [Ventas Año] AS
+SELECT SUM(OD.Quantity*UnitPrice) AS[Ventas],YEAR(O.OrderDate) AS [Año], E.EmployeeID FROM Employees AS E
+	INNER JOIN Orders AS O ON E.EmployeeID = O.EmployeeID
+	INNER JOIN [Order Details] AS OD ON O.OrderID = OD.OrderID
+GROUP BY  E.EmployeeID, YEAR(OrderDate)
+ORDER BY E.EmployeeID,Año
+GO
+
+
+--Ventas de los años anteriores al ultimo
+GO
+CREATE VIEW [Ventas Años Anteriores] AS
+	SELECT SUM(OD.Quantity*UnitPrice) AS[Ventas], YEAR(OA.OrderDate) AS [Años Anteriores], E.EmployeeID FROM Employees AS E
+		INNER JOIN Orders AS O ON E.EmployeeID = O.EmployeeID
+		INNER JOIN [Order Details] AS OD ON O.OrderID = OD.OrderID
+		INNER JOIN Orders AS OA ON O.EmployeeID = O.EmployeeID
+		WHERE YEAR(o.OrderDate) > YEAR(OA.OrderDate)
+	GROUP BY  E.EmployeeID, year(OA.OrderDate)
+GO
+
+SELECT VA.Año, VAA.[Años Anteriores], vaa.EmployeeID, va.Ventas, vaa.Ventas from [Ventas Año] AS[VA]
+	INNER JOIN [Ventas Años Anteriores] AS[VAA] ON VA.EmployeeID = VAA.EmployeeID
+	WHERE VA.Ventas < VAA.Ventas AND VA.Año != VAA.[Años Anteriores] AND VA.Año-VAA.[Años Anteriores] !> 1 
+	AND VA.Año !< VAA.[Años Anteriores] AND ((vaa.[Años Anteriores]*100)/va.Ventas) > 10
+ORDER BY vaa.EmployeeID
+
+
+--De victor, se supone que esto funciona
+SELECT O.EmployeeID, YEAR(O.OrderDate) AS Año2 FROM [Order Details] AS OD
+    INNER JOIN  Orders AS O ON OD.OrderID=O.OrderID
+    INNER JOIN Employees AS E ON O.EmployeeID=E.EmployeeID
+	INNER JOIN(
+			--Ventas de los empleados por año
+			SELECT O.EmployeeID,SUM(OD.Quantity * OD.UnitPrice*(1-OD.Discount)) AS [Ventas Empleado],YEAR(O.OrderDate) AS AÑO
+				FROM [Order Details] AS OD
+				INNER JOIN Orders AS O ON OD.OrderID=O.OrderID
+			GROUP BY O.EmployeeID,YEAR(O.OrderDate)
+			) AS Facturado ON O.EmployeeID=Facturado.EmployeeID AND YEAR(O.Orderdate)-AÑO=1
+GROUP BY O.EmployeeID, YEAR(O.OrderDate), Facturado.[Ventas Empleado]
+HAVING (SUM(OD.Quantity * OD.UnitPrice*(1-OD.Discount))-Facturado.[Ventas Empleado])/Facturado.[Ventas Empleado]*100 >= 10
