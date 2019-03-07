@@ -19,20 +19,6 @@ ORDER BY [Veces Apostados] DESC
 --El casino quiere fomentar la participación y decide regalar saldo extra a los jugadores que hayan apostado más de tres veces 
 --en el último mes. Se considera el mes de febrero.
 --La cantidad que se les regalará será un 5% del total que hayan apostado en ese mes
-SELECT * FROM COL_Apuestas
-SELECT * FROM COL_Jugadas
-
-SELECT * FROM COL_Jugadores
---Planteamiento:
---Sacar las veces que ha apostado y el total apostado en febero. Luego se les añade ese 5%
-SELECT SUM(A.Importe) AS[Total Apostado], A.IDJugador FROM COL_Apuestas AS[A]
-	INNER JOIN COL_Jugadas AS[J] ON A.IDJugada = J.IDJugada
-	WHERE MONTH(MomentoJuega) = 2 --Lo pongo asi porque en este caso la BBDD trabaja solo en 2018
-GROUP BY A.IDJugador
-HAVING COUNT(A.IDjugador) > 3
-ORDER BY IDJugador
-
---Faltaria añadirle el saldo a cada jugador. Aun no se hacerlo
 
 --Extra: lo mismo pero que sea una funcion inline
 GO
@@ -45,6 +31,37 @@ HAVING COUNT(A.IDjugador) > 3
 GO
 
 SELECT * FROM [Cantidad a Regalar] (2)
+
+go
+CREATE VIEW [VecesApostadosPorJugador] AS
+SELECT A.IDJugador, COUNT(*) [Veces apostados] FROM COL_Apuestas AS A
+	INNER JOIN COL_Jugadas AS J ON A.IDJugada = J.IDJugada AND A.IDMesa = J.IDMesa
+WHERE YEAR(J.MomentoJuega) = 2018 AND MONTH(J.MomentoJuega) = 2
+GROUP BY A.IDJugador
+
+
+GO
+CREATE VIEW [CantidadApostadoEnFebrero] AS
+SELECT A.IDJugador, SUM(A.Importe) [Cantidad total apostados], SUM(A.Importe) * 0.05 AS [5%] FROM COL_Apuestas AS A
+	INNER JOIN COL_Jugadas AS J ON A.IDJugada = J.IDJugada AND A.IDMesa = J.IDMesa
+WHERE YEAR(J.MomentoJuega) = 2018 AND MONTH(J.MomentoJuega) = 2
+GROUP BY A.IDJugador
+GO
+
+SELECT ID, Saldo FROM COL_Jugadores
+
+BEGIN TRAN
+
+UPDATE COL_Jugadores
+	SET Saldo=saldo + CAF.[5%]
+		FROM COL_Jugadores AS J
+			INNER JOIN VecesApostadosPorJugador AS VAJ ON J.ID = VAJ.IDJugador
+			INNER JOIN CantidadApostadoEnFebrero AS CAF ON VAJ.IDJugador = CAF.IDJugador
+		WHERE VAJ.[Veces apostados] > 3
+
+SELECT ID, Saldo FROM COL_Jugadores
+
+ROLLBACK
 --Ejercicio 3
 --El día 2 de febrero se celebró el día de la marmota. Para conmemorarlo, el casino ha decidido volver a repetir todas las jugadas 
 --que se hicieron ese día, pero poniéndoles fecha de mañana (con la misma hora) y permitiendo que los jugadores apuesten. 
