@@ -30,6 +30,13 @@ SELECT COUNT(T.pub_id) AS[Libros Publicados], P.pub_name FROM Titles AS[T]
  GROUP BY pub_name
 
 --5. Número de empleados de cada editorial.
+SELECT * FROM Employee
+SELECT * FROM publishers
+
+SELECT COUNT(E.pub_id) AS[Numero Empleados], pub_name FROM Employee AS[E]
+	INNER JOIN publishers AS[P] ON E.pub_id = P.pub_id
+GROUP BY pub_name
+
 --6. Calcular la relación entre número de ejemplares publicados y número de empleados de cada editorial, 
 --incluyendo el nombre de la misma.
 SELECT * FROM Employee
@@ -62,9 +69,25 @@ GROUP BY au_fname, au_lname
 
 
 --11. Número de empleados de cada categoría (jobs).
+SELECT * FROM jobs
+SELECT * FROM Employee
+
+SELECT job_desc, COUNT(E.job_id) AS[Numero Empleados] FROM jobs AS j
+	INNER JOIN Employee AS E ON J.job_id = E.job_id
+GROUP BY Job_desc
 
 --12. Número de empleados de cada categoría (jobs) que tiene cada editorial, incluyendo aquellas categorías en las que no haya ningún empleado.
 
 --13. Autores que han escrito libros de dos o más tipos diferentes
 
 --14. Empleados que no trabajan actualmente en editoriales que han publicado libros cuya columna notes contenga la palabra "and”
+SELECT * FROM Employee
+SELECT * FROM publishers
+
+--Busco los que trabajan menos los que no.
+SELECT E.fname, E.lname FROM Employee AS E
+EXCEPT
+SELECT E.fname, E.lname FROM Employee AS E
+	INNER JOIN publishers AS P ON E.pub_id = P.pub_id
+	INNER JOIN Titles AS T ON P.pub_id = T.pub_id
+WHERE Notes LIKE ('%AND%')
