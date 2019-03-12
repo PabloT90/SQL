@@ -31,8 +31,9 @@ HAVING COUNT(A.IDjugador) > 3
 GO
 
 SELECT * FROM [Cantidad a Regalar] (2)
-
-go
+--------------------------------------------------------------
+--------------------------------------------------------------
+GO
 CREATE VIEW [VecesApostadosPorJugador] AS
 SELECT A.IDJugador, COUNT(*) [Veces apostados] FROM COL_Apuestas AS A
 	INNER JOIN COL_Jugadas AS J ON A.IDJugada = J.IDJugada AND A.IDMesa = J.IDMesa
