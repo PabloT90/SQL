@@ -68,7 +68,17 @@ ROLLBACK
 --que se hicieron ese día, pero poniéndoles fecha de mañana (con la misma hora) y permitiendo que los jugadores apuesten. 
 --El número ganador de cada jugada se pondrá a NULL y el NoVaMas a 0.
 --Crea esas nuevas filas con una instrucción INSERT-SELECT
+GO
 
+INSERT INTO COL_Jugadas
+(IDMesa, IDJugada, MomentoJuega, NoVaMas, Numero)
+SELECT IDMesa, IDJugada + 2000,
+		DATEADD(MINUTE, DATEPART(MINUTE, MomentoJuega), DATEADD(HOUR, DATEPART(HOUR, MomentoJuega), CAST(CAST (CURRENT_TIMESTAMP AS DATE) AS DATETIME)))
+		, 0, NULL
+FROM COL_Jugadas 
+WHERE CAST(MomentoJuega AS DATE) = '02-02-2018'
+
+ROLLBACK
 
 --Ejercicio 4
 --Crea una vista que nos muestre, para cada jugador, nombre, apellidos, Nick, número de apuestas realizadas, total de dinero apostado y 
