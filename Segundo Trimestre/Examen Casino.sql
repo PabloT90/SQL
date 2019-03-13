@@ -73,7 +73,32 @@ ROLLBACK
 --Ejercicio 4
 --Crea una vista que nos muestre, para cada jugador, nombre, apellidos, Nick, número de apuestas realizadas, total de dinero apostado y 
 --total de dinero ganado/perdido.
+SELECT * FROM COL_Jugadores
+SELECT * FROM COL_Apuestas
+SELECT * FROM COL_Jugadas --La jugada que ha hecho la persona
+SELECT * FROM COL_NumerosApuesta --El numero que ha salido en cada jugada.
 
+--Nombre, apellidos, nick, numero de apuestas realizadas y total dinero apostado
+GO
+CREATE VIEW [Total Apostado] AS
+SELECT J.ID,J.Nombre, J.Apellidos, J.Nick, SUM(A.Importe) AS[Dinero apostado], COUNT(A.IDJugador) AS[Numero Apuestas] FROM COL_Jugadores AS[J]
+	INNER JOIN COL_Apuestas AS[A] ON J.ID = A.IDJugador
+GROUP BY ID, J.Nombre, J.Apellidos, J.Nick
+GO
+
+--Dinero ganado
+ALTER VIEW [Dinero Ganado] AS
+SELECT SUM(Importe*Premio) AS[Dinero Ganado], A.IDJugador FROM COL_Jugadas AS[J]
+	INNER JOIN COL_Apuestas AS[A] ON J.IDMesa = A.IDMesa AND J.IDJugada = A.IDJugada
+	INNER JOIN COL_NumerosApuesta AS[NA] ON A.IDJugada = NA.IDJugada AND A.IDJugador = NA.IDJugador AND A.IDMesa = NA.IDMesa
+	INNER JOIN COL_TiposApuesta AS[TA] ON A.Tipo = TA.ID
+WHERE J.Numero = NA.Numero
+GROUP BY  A.IDJugador
+--ORDER BY A.IDJugador
+GO
+
+SELECT TA.Nombre, TA.Apellidos, TA.Nick, TA.[Dinero apostado], TA.[Numero Apuestas], DG.[Dinero Ganado]/TA.[Dinero apostado] AS[Balance]  FROM [Total Apostado] AS[TA]
+	INNER JOIN [Dinero Ganado] AS[DG] ON TA.ID = DG.IDJugador
 
 --Ejercicio 5
 --Nos comunican que la policía ha detenido a nuestro cliente Ombligo Pato por delitos de estafa, falsedad, administración desleal y 
@@ -82,3 +107,4 @@ ROLLBACK
 --por nuestro casino.
 --Borra todas las apuestas que haya realizado, pero no busques su ID a mano en la tabla COL_Clientes. Utiliza su Nick (bankiaman) 
 --para identificarlo en la instrucción DELETE.
+
