@@ -10,7 +10,7 @@ SELECT * FROM  COL_Apuestas
 SELECT * FROM COL_Jugadas
 
 SELECT J.Numero, A.Tipo, COUNT(*) AS [Veces Apostados] FROM COL_Jugadas AS J
-	INNER JOIN COL_Apuestas AS A ON J.IDJugada = A.IDJugada
+	INNER JOIN COL_Apuestas AS A ON J.IDJugada = A.IDJugada AND J.IDMesa = A.IDMesa
 WHERE A.Tipo IN(10, 13, 15)
 GROUP BY J.Numero, A.Tipo
 ORDER BY [Veces Apostados] DESC
@@ -97,7 +97,7 @@ GROUP BY ID, J.Nombre, J.Apellidos, J.Nick
 GO
 
 --Dinero ganado
-ALTER VIEW [Dinero Ganado] AS
+CREATE VIEW [Dinero Ganado] AS
 SELECT SUM(Importe*Premio) AS[Dinero Ganado], A.IDJugador FROM COL_Jugadas AS[J]
 	INNER JOIN COL_Apuestas AS[A] ON J.IDMesa = A.IDMesa AND J.IDJugada = A.IDJugada
 	INNER JOIN COL_NumerosApuesta AS[NA] ON A.IDJugada = NA.IDJugada AND A.IDJugador = NA.IDJugador AND A.IDMesa = NA.IDMesa
@@ -118,3 +118,53 @@ SELECT TA.Nombre, TA.Apellidos, TA.Nick, TA.[Dinero apostado], TA.[Numero Apuest
 --Borra todas las apuestas que haya realizado, pero no busques su ID a mano en la tabla COL_Clientes. Utiliza su Nick (bankiaman) 
 --para identificarlo en la instrucción DELETE.
 
+
+--Ejercicio 6
+--Crea una función a la que pasemos como parámetros una fecha de inicio y otra de fin y nos devuelva el números de jugadas, 
+--el total de dinero apostado y las ganancias (del casino) de cada una de las mesas en ese periodo.
+
+--Lo que ha ganado el casino
+GO
+CREATE VIEW [PerdidoXMesa] AS
+SELECT SUM(Importe*Premio) AS [Dinero perdido], A.IDMesa FROM  COL_Jugadas AS[J] 
+	INNER JOIN COL_Apuestas AS [A] ON J.IDJugada = A.IDJugada AND J.IDMesa = A.IDMesa
+	INNER JOIN COL_NumerosApuesta AS NA ON NA.IDJugador = A.IDJugador AND A.IDJugada = NA.IDJugada AND A.IDMesa = NA.IDMesa
+	INNER JOIN COL_TiposApuesta AS[TA] ON A.Tipo = TA.ID
+WHERE J.Numero = NA.Numero
+GROUP BY  A.IDMesa
+GO
+
+
+
+--Ganado por mesa
+GO
+CREATE VIEW [GanadoXMesa] AS
+SELECT SUM(Importe) AS [Dinero ganado], A.IDMesa FROM COL_Jugadas AS[J]
+	INNER JOIN COL_Apuestas AS[A] ON J.IDMesa = A.IDMesa AND J.IDJugada = A.IDJugada
+	INNER JOIN COL_NumerosApuesta AS[NA] ON A.IDJugada = NA.IDJugada AND A.IDJugador = NA.IDJugador AND A.IDMesa = NA.IDMesa
+WHERE J.Numero != NA.Numero
+GROUP BY  A.IDMesa
+GO
+
+
+GO
+CREATE FUNCTION FNCasino (@fechaFin DATE, @fechaInicio DATE) RETURNS TABLE AS RETURN
+SELECT A.IDMesa,COUNT(A.IDJugador) AS [Número de Apuestas Realizadas],SUM(A.Importe) AS [Total de dinero apostado]
+    ,G.[Dinero Ganado]-P.[Dinero perdido] AS [Ganado/Perdido] FROM COL_Apuestas AS[A]  
+	INNER JOIN COL_Jugadas AS[JA] ON JA.IDMesa = A.IDMesa AND JA.IDJugada = A.IDJugada
+	INNER JOIN COL_NumerosApuesta AS[NA] ON A.IDJugada = NA.IDJugada AND A.IDJugador = NA.IDJugador AND A.IDMesa = NA.IDMesa
+	INNER JOIN PerdidoXMesa AS P ON NA.IDMesa=P.IDMesa
+	INNER JOIN GanadoXMesa AS G ON G.IDMesa = P.IDMesa
+WHERE MomentoJuega BETWEEN @fechaInicio AND @fechaFin
+GROUP BY A.IDMesa, P.[Dinero perdido], G.[Dinero ganado]
+GO
+
+SELECT * FROM FNCasino('2018-01-14', '2018-01-01')
+ORDER BY IDMesa
+
+
+--Ejercicio 7
+--El casino sospecha que algunos croupiers favorecen a ciertos jugadores. Para ello buscamos si algunos jugadores han sido especialmente 
+--afortunados cuando han jugado en una mesa determinada.
+--Haz una consulta que nos devuelva los nombres e IDs de los jugadores que han ganado un 30% más en una mesa en particular que en 
+--la media de las otras.
