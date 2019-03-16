@@ -123,48 +123,67 @@ SELECT TA.Nombre, TA.Apellidos, TA.Nick, TA.[Dinero apostado], TA.[Numero Apuest
 --Crea una función a la que pasemos como parámetros una fecha de inicio y otra de fin y nos devuelva el números de jugadas, 
 --el total de dinero apostado y las ganancias (del casino) de cada una de las mesas en ese periodo.
 
---Lo que ha ganado el casino
+--Funcion ganado x mesa
 GO
-CREATE VIEW [PerdidoXMesa] AS
-SELECT SUM(Importe*Premio) AS [Dinero perdido], A.IDMesa FROM  COL_Jugadas AS[J] 
-	INNER JOIN COL_Apuestas AS [A] ON J.IDJugada = A.IDJugada AND J.IDMesa = A.IDMesa
-	INNER JOIN COL_NumerosApuesta AS NA ON NA.IDJugador = A.IDJugador AND A.IDJugada = NA.IDJugada AND A.IDMesa = NA.IDMesa
-	INNER JOIN COL_TiposApuesta AS[TA] ON A.Tipo = TA.ID
-WHERE J.Numero = NA.Numero
-GROUP BY  A.IDMesa
+CREATE FUNCTION [GanadoxMesa](@fechaInicio DATE, @fechaFin DATE) RETURNS TABLE AS RETURN
+SELECT SUM(A.Importe) AS[Total Ganado], M.ID FROM COL_Mesas AS[M]
+	INNER JOIN COL_Jugadas AS[J] ON M.ID = J.IDMesa
+	INNER JOIN COL_Apuestas AS A ON J.IDMesa = A.IDMesa AND J.IDJugada = A.IDJugada
+	INNER JOIN COL_NumerosApuesta AS NA ON A.IDJugada = NA.IDJugada AND A.IDJugador = NA.IDJugador AND A.IDMesa = NA.IDMesa
+WHERE J.Numero != NA.Numero AND J.MomentoJuega BETWEEN @fechaInicio AND @fechaFin
+GROUP BY M.ID
 GO
 
-
-
---Ganado por mesa
+--El plan es crear una funcion que me devuelva lo que ha ganado cada mesa en un periodo introducido como parametro
+--Luego creo otra funcion que llame a la anterior, que sera la que reciba los parametros de fechas.
 GO
-CREATE VIEW [GanadoXMesa] AS
-SELECT SUM(Importe) AS [Dinero ganado], A.IDMesa FROM COL_Jugadas AS[J]
+ALTER FUNCTION [DineroSegunFechas](@fechaInicio DATE, @fechaFin DATE) RETURNS TABLE AS RETURN
+SELECT COUNT(A.IDJugador) AS[Num Apuestas], SUM(A.Importe) AS[Dinero Apostado], GM.[Total Ganado], M.ID FROM COL_Mesas AS M
+	INNER JOIN COL_Jugadas AS[J] ON M.ID = J.IDMesa
 	INNER JOIN COL_Apuestas AS[A] ON J.IDMesa = A.IDMesa AND J.IDJugada = A.IDJugada
-	INNER JOIN COL_NumerosApuesta AS[NA] ON A.IDJugada = NA.IDJugada AND A.IDJugador = NA.IDJugador AND A.IDMesa = NA.IDMesa
-WHERE J.Numero != NA.Numero
-GROUP BY  A.IDMesa
+	INNER JOIN [GanadoxMesa]('2018-01-01', '2018-01-14') AS[GM] ON A.IDMesa = GM.ID
+WHERE J.MomentoJuega BETWEEN (@fechaInicio) AND (@fechaFin)
+GROUP BY M.ID, GM.[Total Ganado]
 GO
 
-
-GO
-CREATE FUNCTION FNCasino (@fechaFin DATE, @fechaInicio DATE) RETURNS TABLE AS RETURN
-SELECT A.IDMesa,COUNT(A.IDJugador) AS [Número de Apuestas Realizadas],SUM(A.Importe) AS [Total de dinero apostado]
-    ,G.[Dinero Ganado]-P.[Dinero perdido] AS [Ganado/Perdido] FROM COL_Apuestas AS[A]  
-	INNER JOIN COL_Jugadas AS[JA] ON JA.IDMesa = A.IDMesa AND JA.IDJugada = A.IDJugada
-	INNER JOIN COL_NumerosApuesta AS[NA] ON A.IDJugada = NA.IDJugada AND A.IDJugador = NA.IDJugador AND A.IDMesa = NA.IDMesa
-	INNER JOIN PerdidoXMesa AS P ON NA.IDMesa=P.IDMesa
-	INNER JOIN GanadoXMesa AS G ON G.IDMesa = P.IDMesa
-WHERE MomentoJuega BETWEEN @fechaInicio AND @fechaFin
-GROUP BY A.IDMesa, P.[Dinero perdido], G.[Dinero ganado]
-GO
-
-SELECT * FROM FNCasino('2018-01-14', '2018-01-01')
-ORDER BY IDMesa
-
+SELECT * FROM DineroSegunFechas('2018-01-01', '2018-01-14')
+ORDER BY ID
 
 --Ejercicio 7
 --El casino sospecha que algunos croupiers favorecen a ciertos jugadores. Para ello buscamos si algunos jugadores han sido especialmente 
 --afortunados cuando han jugado en una mesa determinada.
 --Haz una consulta que nos devuelva los nombres e IDs de los jugadores que han ganado un 30% más en una mesa en particular que en 
 --la media de las otras.
+SELECT * FROM COL_Jugadores
+SELECT * FROM COL_Apuestas
+SELECT * FROM COL_Jugadas
+SELECT * FROM COL_NumerosApuesta
+
+GO
+CREATE VIEW [Media Mesas] AS
+	--Ahora la media de cada mesa
+	SELECT AVG(Ganado) AS[Media], M.IDMesa FROM (
+		--Primero busco lo que ha ganado cada jugadador en cada mesa.
+		SELECT SUM(A.Importe*TA.Premio) AS[Ganado], A.IDJugador, JU.IDMesa FROM COL_Jugadores AS[J]
+			INNER JOIN COL_Apuestas AS[A] ON J.ID = A.IDJugador
+			INNER JOIN COL_Jugadas AS[JU] ON A.IDJugada = Ju.IDJugada AND A.IDMesa = JU.IDMesa
+			INNER JOIN COL_NumerosApuesta AS[NA] ON A.IDJugada = NA.IDJugada AND A.IDJugador = NA.IDJugador AND A.IDMesa = NA.IDMesa
+			INNER JOIN COL_TiposApuesta AS[TA] ON A.Tipo = TA.ID
+		WHERE JU.Numero = NA.Numero --Los que han ganado
+		GROUP BY A.IDJugador, JU.IDMesa) AS[M]
+	GROUP BY M.IDMesa
+GO
+--Tengo que obtener lo que ha ganado cada jugador en cada mesa y quedarme solo con los que han superado en un 30% la media de cada mesa.
+--Ahora obtengo los que superan esa media un 30%
+SELECT SUM(A.Importe*TA.Premio) AS[Ganado], A.IDJugador, JU.IDMesa FROM COL_Jugadores AS[J]
+	INNER JOIN COL_Apuestas AS[A] ON J.ID = A.IDJugador
+	INNER JOIN COL_Jugadas AS[JU] ON A.IDJugada = Ju.IDJugada AND A.IDMesa = JU.IDMesa
+	INNER JOIN COL_NumerosApuesta AS[NA] ON A.IDJugada = NA.IDJugada AND A.IDJugador = NA.IDJugador AND A.IDMesa = NA.IDMesa
+	INNER JOIN COL_TiposApuesta AS[TA] ON A.Tipo = TA.ID
+	INNER JOIN [Media Mesas] AS[MM] ON Ju.IDMesa = MM.IDMesa
+WHERE JU.Numero = NA.Numero
+GROUP BY  A.IDJugador, JU.IDMesa, MM.Media
+HAVING SUM(A.Importe*TA.Premio)*0.7 > MM.Media
+ORDER BY IDJugador, IDMesa
+
+SELECT * FROM [Media Mesas]
