@@ -160,7 +160,7 @@ SELECT * FROM COL_Jugadas
 SELECT * FROM COL_NumerosApuesta
 
 GO
-CREATE VIEW [Media Mesas] AS
+CREATE VIEW [Media Mesas] AS --Esta vista muestra la media que se ha ganado en cada mesa por los jugadores.
 	--Ahora la media de cada mesa
 	SELECT AVG(Ganado) AS[Media], M.IDMesa FROM (
 		--Primero busco lo que ha ganado cada jugadador en cada mesa.
