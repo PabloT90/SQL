@@ -183,7 +183,7 @@ SELECT SUM(A.Importe*TA.Premio) AS[Ganado], A.IDJugador, JU.IDMesa FROM COL_Juga
 	INNER JOIN [Media Mesas] AS[MM] ON Ju.IDMesa = MM.IDMesa
 WHERE JU.Numero = NA.Numero
 GROUP BY  A.IDJugador, JU.IDMesa, MM.Media
-HAVING SUM(A.Importe*TA.Premio)*0.7 > MM.Media
+HAVING SUM(A.Importe*TA.Premio) > MM.Media*1.3
 ORDER BY IDJugador, IDMesa
 
 SELECT * FROM [Media Mesas]
