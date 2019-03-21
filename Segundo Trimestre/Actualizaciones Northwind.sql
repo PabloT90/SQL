@@ -8,22 +8,89 @@ COMMIT TRAN
 
 --2. Véndele (hoy) tres unidades de "Pavlova”, diez de "Inlagd Sill” y 25 de "Filo Mix”. El distribuidor será Speedy Express y 
 --el vendedor Laura Callahan.
-SELECT * FROM Orders
-BEGIN TRAN
 INSERT INTO Orders
-	VALUES('VOKSI', 8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 1, NULL, 'Speedy Express', null, null, null, null, null)
+SELECT C.CustomerID, E.EmployeeID, CURRENT_TIMESTAMP, NULL, NULL, S.ShipperID, 0, S.CompanyName, C.Address, C.City, 
+	NULL, C.PostalCode, C.Country FROM Shippers AS S
+	CROSS JOIN Customers AS C
+	CROSS JOIN Employees AS E
+WHERE C.CompanyName = 'Victor Calla' AND (E.FirstName='Laura' AND E.LastName='Callahan') AND S.CompanyName='Speedy Express'
+COMMIT TRAN
 
-select * from Employees
-select * from Shippers
-SELECT * FROM Suppliers
+--Lo que hace es que la variable @id sea IDENTITY.
+DECLARE @id INT
+SET @id = @@IDENTITY
+
+BEGIN TRAN
+INSERT INTO [Order Details]
+	SELECT @id, ProductID, UnitPrice, 3 , 0  FROM Products --Cuando le pongo los valores explicitos significa que las filas que me devuelva, el valor en esa columna es ese valor explicito.
+		WHERE (ProductName='Pavlova')
+
+INSERT INTO [Order Details]
+	SELECT @id, ProductID, UnitPrice, 10 , 0  FROM Products
+		WHERE (ProductName='Inlagd Sill')
+
+INSERT INTO [Order Details]
+	SELECT @id, ProductID, UnitPrice, 25 , 0  FROM Products
+		WHERE (ProductName='Filo Mix')
+ROLLBACK
+
 --3. Ante la bajada de ventas producida por la crisis, hemos de adaptar nuestros precios según las siguientes reglas:
-	--Los productos de la categoría de bebidas (Beverages) que cuesten más de $10 reducen su precio en un dólar.
-	--Los productos de la categoría Lácteos que cuesten más de $5 reducen su precio en un 10%.
-	--Los productos de los que se hayan vendido menos de 200 unidades en el último año, reducen su precio en un 5%
+--Los productos de la categoría de bebidas (Beverages) que cuesten más de $10 reducen su precio en un dólar.
+--Los productos de la categoría Lácteos que cuesten más de $5 reducen su precio en un 10%.
+--Los productos de los que se hayan vendido menos de 200 unidades en el último año, reducen su precio en un 5%
 
+--Apartado A)
+BEGIN TRAN
+UPDATE Products
+	SET UnitPrice = UnitPrice - 1
+WHERE ProductID IN(SELECT P.ProductID FROM Products AS[P] --Productos de la categoria de bebidas Beverages que cuesten mas de 10$
+						INNER JOIN Categories AS[C] ON P.CategoryID = C.CategoryID
+				   WHERE P.UnitPrice > 10 AND C.CategoryName = 'Beverages')
+ROLLBACK
 
+--Apartado B)
+BEGIN TRAN
+UPDATE Products
+	SET UnitPrice = UnitPrice * 0.9
+WHERE ProductID IN(SELECT P.ProductID FROM Products AS[P] --Productos de la categoria lacteos que cuesten mas de 5$
+						INNER JOIN Categories AS[C] ON P.CategoryID = C.CategoryID
+				   WHERE P.UnitPrice > 5 AND C.CategoryName = 'Dairy Products')
+ROLLBACK
+
+--Apartado C) Los productos de los que se hayan vendido menos de 200 unidades en el último año, reducen su precio en un 5%
+BEGIN TRAN
+UPDATE Products
+	SET UnitPrice = UnitPrice * 0.95
+WHERE ProductID IN (SELECT P.ProductID FROM Products AS[P]
+						INNER JOIN [Order Details] AS[OD] ON P.ProductID = OD.ProductID
+						INNER JOIN [Orders] AS[O] ON OD.OrderID = O.OrderID
+					GROUP BY P.ProductID, O.OrderDate
+					HAVING SUM(OD.Quantity) < 200 AND YEAR(O.OrderDate) = YEAR(CURRENT_TIMESTAMP))
+ROLLBACK
 --4. Inserta un nuevo vendedor llamado Michael Trump. Asígnale los territorios de Louisville, Phoenix, Santa Cruz y Atlanta.
+SELECT * FROM  Territories
+SELECT * FROM EmployeeTerritories
+SELECT * FROM Employees
 
+BEGIN TRAN
+INSERT INTO Employees
+	VALUES('Prats','Pablo', NULL,NULL, NULL,NULL, NULL,NULL, NULL,NULL,NULL, NULL,NULL, NULL,NULL, NULL,NULL)
+COMMIT TRAN
+
+BEGIN TRAN 
+INSERT INTO EmployeeTerritories
+	VALUES(12,(SELECT TerritoryID FROM Territories
+					WHERE TerritoryDescription = 'Louisville'))
+INSERT INTO EmployeeTerritories
+	VALUES(12,(SELECT TerritoryID FROM Territories
+					WHERE TerritoryDescription = 'Phoenix'))
+INSERT INTO EmployeeTerritories
+	VALUES(12,(SELECT TerritoryID FROM Territories
+					WHERE TerritoryDescription = 'Santa Cruz'))
+INSERT INTO EmployeeTerritories
+	VALUES(12,(SELECT TerritoryID FROM Territories
+					WHERE TerritoryDescription = 'Atlanta'))
+ROLLBACK
 
 --5. Haz que las ventas del año 97 de Robert King que haya hecho a clientes de los estados de California y Texas se le asignen 
 --al nuevo empleado.
@@ -59,4 +126,3 @@ SELECT * FROM Suppliers
 --El pasado 20 de enero, Margaret Peacock consiguió vender una caja de Nesquick Power Max a todos los clientes que le habían 
 --comprado algo anteriormente. Los datos de envío (dirección, transportista, etc) son los mismos de alguna de sus ventas 
 --anteriores a ese cliente).
-
