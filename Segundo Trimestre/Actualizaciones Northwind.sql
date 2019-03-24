@@ -68,10 +68,6 @@ WHERE ProductID IN (SELECT P.ProductID FROM Products AS[P]
 					HAVING SUM(OD.Quantity) < 200 AND YEAR(O.OrderDate) = YEAR(CURRENT_TIMESTAMP))
 ROLLBACK
 --4. Inserta un nuevo vendedor llamado Michael Trump. Asígnale los territorios de Louisville, Phoenix, Santa Cruz y Atlanta.
-SELECT * FROM  Territories
-SELECT * FROM EmployeeTerritories
-SELECT * FROM Employees
-
 BEGIN TRAN
 INSERT INTO Employees
 	VALUES('Prats','Pablo', NULL,NULL, NULL,NULL, NULL,NULL, NULL,NULL,NULL, NULL,NULL, NULL,NULL, NULL,NULL)
@@ -79,22 +75,33 @@ COMMIT TRAN
 
 BEGIN TRAN 
 INSERT INTO EmployeeTerritories
-	VALUES(12,(SELECT TerritoryID FROM Territories
+	VALUES(10,(SELECT TerritoryID FROM Territories
 					WHERE TerritoryDescription = 'Louisville'))
 INSERT INTO EmployeeTerritories
-	VALUES(12,(SELECT TerritoryID FROM Territories
+	VALUES(10,(SELECT TerritoryID FROM Territories
 					WHERE TerritoryDescription = 'Phoenix'))
 INSERT INTO EmployeeTerritories
-	VALUES(12,(SELECT TerritoryID FROM Territories
+	VALUES(10,(SELECT TerritoryID FROM Territories
 					WHERE TerritoryDescription = 'Santa Cruz'))
 INSERT INTO EmployeeTerritories
-	VALUES(12,(SELECT TerritoryID FROM Territories
+	VALUES(10,(SELECT TerritoryID FROM Territories
 					WHERE TerritoryDescription = 'Atlanta'))
 ROLLBACK
 
 --5. Haz que las ventas del año 97 de Robert King que haya hecho a clientes de los estados de California y Texas se le asignen 
 --al nuevo empleado.
-
+SELECT * FROM ORDERS
+--Consulta que me devuelva eso
+BEGIN TRAN
+UPDATE Orders
+SET EmployeeID = (SELECT EmployeeID FROM Employees
+						WHERE LastName='Prats' AND FirstName='Pablo')
+WHERE OrderID IN (SELECT O.OrderID FROM Employees AS[E]
+					INNER JOIN Orders AS[O] ON E.EmployeeID = O.EmployeeID
+					INNER JOIN Customers AS[C] ON O.CustomerID = C.CustomerID
+				 WHERE YEAR(O.OrderDate) = 1997 AND O.EmployeeID = 8 AND O.ShipRegion in ('ca','tx'))
+--COMMIT TRAN
+--ROLLBACK
 
 --6. Inserta un nuevo producto con los siguientes datos:
 	--ProductID: 90
