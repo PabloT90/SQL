@@ -114,7 +114,11 @@ WHERE OrderID IN (SELECT O.OrderID FROM Employees AS[E]
 	--UnitsOnOrder: 0
 	--ReorderLevel: 0
 	--Discontinued: 0
-
+BEGIN TRANSACTION
+INSERT INTO Products (ProductName, SupplierID, CategoryID, QuantityPerUnit, UnitPrice, UnitsInStock, UnitsOnOrder, ReorderLevel, Discontinued)
+VALUES ('Nesquick Power Max', 12, 3, '10 x 300g', 2.40, 38, 0, 0, 0)
+--ROLLBACK
+--COMMIT
 
 --7. Inserta un nuevo producto con los siguientes datos:
 	--ProductID: 91
@@ -127,7 +131,11 @@ WHERE OrderID IN (SELECT O.OrderID FROM Employees AS[E]
 	--UnitsOnOrder: 0
 	--ReorderLevel: 0
 	--Discontinued: 0
-
+BEGIN TRANSACTION
+INSERT INTO Products (ProductName, SupplierID, CategoryID, QuantityPerUnit, UnitPrice, UnitsInStock, UnitsOnOrder, ReorderLevel, Discontinued)
+VALUES ('Mecca Cola', 1, 1, '6 x 75 cl', 7.35, 14, 0, 0, 0)
+--ROLLBACK
+--COMMIT
 
 --8. Todos los que han comprado "Outback Lager" han comprado cinco años después la misma cantidad de Mecca Cola al mismo vendedor
 --El pasado 20 de enero, Margaret Peacock consiguió vender una caja de Nesquick Power Max a todos los clientes que le habían 
