@@ -1,54 +1,70 @@
-USE CentroDeportivo
---Ejercicio 1
---Escribe un procedimiento EliminarUsuario que reciba como parámetro el DNI de un usuario, le coloque un NULL en la 
---columna Sex y borre todas las reservas futuras de ese usuario. Ten en cuenta que si alguna de esas reservas tiene 
---asociado un alquiler de material habrá que borrarlo también.
- 
+USE LeoMetroV2
+--Ejercicio 0
+--La dimisión de Esperanza Aguirre ha causado tal conmoción entre los directivos de LeoMetro que han decidido conceder una 
+--amnistía a todos los pasajeros que tengan un saldo negativo en sus tarjetas.
+--Crea un procedimiento que racargue la cantidad necesaria para dejar a 0 el saldo de las tarjetas que tengan un saldo negativo 
+--y hayan sido recargadas al menos una vez en los últimos dos meses.
+--Ejercicio elaborado en colaboración con Sefran.
+SELECT * FROM LM_Recargas
+SELECT * FROM LM_Tarjetas
 GO
-CREATE PROCEDURE EliminarUsuario @DNI char(9) AS
+CREATE PROCEDURE RecargarSaldo AS
 BEGIN
-	UPDATE Usuarios
-	SET Sex = NULL
-	WHERE DNI = @DNI
-
-	DELETE ReservasMateriales FROM ReservasMateriales AS[RM]
-		INNER JOIN Reservas AS[R] ON RM.CodigoReserva = R.Codigo
-		INNER JOIN Usuarios AS[U] ON R.ID_Usuario = U.ID
-	WHERE  U.DNI = @DNI AND CURRENT_TIMESTAMP < R.Fecha_Hora
-
-	DELETE Reservas FROM Reservas AS[R]
-		INNER JOIN Usuarios AS[U] ON R.ID_Usuario = U.ID
-	WHERE U.DNI = @DNI AND CURRENT_TIMESTAMP < R.Fecha_Hora
-	--Ahora tengo que borrar el alquiler de los materiales.
-END --Fin del procedimiento
+	UPDATE LM_Tarjetas
+	SET Saldo = Saldo
+	FROM LM_Tarjetas AS[T]
+		INNER JOIN LM_Recargas AS[R] ON T.ID = R.ID_Tarjeta
+	WHERE Saldo < 0  AND YEAR(Momento_Recarga) = YEAR(CURRENT_TIMESTAMP) AND (MONTH(CURRENT_TIMESTAMP)-MONTH(Momento_Recarga)) < 2 --Asi es un poco mierda pero weno.
+END
 GO
-EXECUTE EliminarUsuario '59544420G'
+--Ejercicio 1
+--Crea un procedimiento RecargarTarjeta que reciba como parámetros el ID de una tarjeta y un importe y actualice el saldo 
+--de la tarjeta sumándole dicho importe, además de grabar la correspondiente recarga
+
 
 --Ejercicio 2
---Escribe un procedimiento que reciba como parámetros el código de una instalación y una fecha/hora (SmallDateTime) y 
---devuelva en otro parámetro de salida el ID del usuario que la tenía alquilada si en ese momento la instalación estaba ocupada. 
---Si estaba libre, devolverá un NULL.
+--Crea un procedimiento almacenado llamado PasajeroSale que reciba como parámetros el ID de una tarjeta, el ID de una estación 
+--y una fecha/hora (opcional). El procedimiento se llamará cuando un pasajero pasa su tarjeta por uno de los tornos de salida del metro. 
+--Su misión es grabar la salida en la tabla LM_Viajes. Para ello deberá localizar la entrada que corresponda, que será la última 
+--entrada correspondiente al mismo pasajero y hará un update de las columnas que corresponda. Si no existe la entrada, grabaremos 
+--una nueva fila en LM_Viajes dejando a NULL la estación y el momento de entrada.
+--Si se omite el parámetro de la fecha/hora, se tomará la actual.
 
 
 --Ejercicio 3
---Escribe un procedimiento que reciba como parámetros el código de una instalación y dos fechas (DATE) y devuelva en 
---otro parámetro de salida el número de horas que esa instalación ha estado alquilada entre esas dos fechas, ambas incluidas. 
---Si se omite la segunda fecha, se tomará la actual con GETDATE().
---Devuelve con return códigos de error si el código de la instalación es erróneo  o si la fecha de inicio es posterior a la de fin.
+--A veces, un pasajero reclama que le hemos cobrado un viaje de forma indebida. Escribe un procedimiento que reciba como 
+--parámetro el ID de un pasajero y la fecha y hora de la entrada en el metro y anule ese viaje, actualizando además el saldo 
+--de la tarjeta que utilizó.
 
 
 --Ejercicio 4
---Escribe un procedimiento EfectuarReserva que reciba como parámetro el DNI de un usuario, el código de la instalación, 
---la fecha/hora de inicio de la reserva y la fecha/hora final.
---El procedimiento comprobará que los datos de entradas son correctos y grabará la correspondiente reserva. 
---Devolverá el código de reserva generado mediante un parámetro de salida. Para obtener el valor generado usar 
---la función @@identity tras el INSERT.
---Devuelve un cero si la operación se realiza con éxito y un código de error según la lista siguiente:
+--La empresa de Metro realiza una campaña de promoción para pasajeros fieles.
+
+--Crea un procedimiento almacenado que recargue saldo a los pasajeros que cumplan determinados requisitos. 
+--Se recargarán N1 euros a los pasajeros que hayan consumido más de 30 euros en el mes anterior (considerar mes completo, del día 1 al fin) 
+--y N2 euros a los que hayan utilizado más de 10 veces alguna estación de las zonas 3 o 4. 
+
+--Los valores de N1 y N2 se pasarán como parámetros. Si se omiten, se tomará el valor 5.
+
+--Ambos premios son excluyentes. Si algún pasajero cumple ambas condiciones se le aplicará la que suponga mayor bonificación de las dos.
 
 
---3: La instalación está ocupada para esa fecha y hora
---4: El código de la instalación es incorrecto
---5: El usuario no existe
---8: La fecha/hora de inicio del alquiler es posterior a la de fin
---11: La fecha de inicio y de fin son diferentes
 
+--Ejercicio 5
+--Crea una función que nos devuelva verdadero si es posible que un pasajero haya subido a un tren en un determinado viaje. 
+--Se pasará como parámetro el código del viaje y la matrícula del tren.
+
+
+
+--Ejercicio 6
+--Crea un procedimiento SustituirTarjeta que Cree una nueva tarjeta y la asigne al mismo usuario y con el mismo saldo que otra 
+--tarjeta existente. El código de la tarjeta a sustituir se pasará como parámetro.
+
+
+--Ejercicio 7
+--Las estaciones de la zona 3 tienen ciertas deficiencias, lo que nos ha obligado a introducir una serie de modificaciones en 
+--los trenes  para cumplir las medidas de seguridad.
+--A consecuencia de estas modificaciones, la capacidad de los trenes se ha visto reducida en 6 plazas para los trenes 
+--de tipo 1 y 4 plazas para los trenes de tipo 2.
+--Realiza un procedimiento al que se pase un intervalo de tiempo y modifique la capacidad de todos los trenes que hayan 
+--circulado más de una vez por alguna estación de la zona 3 en ese intervalo.
