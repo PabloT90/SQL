@@ -48,7 +48,40 @@ SELECT @IDUsuario
 --otro parámetro de salida el número de horas que esa instalación ha estado alquilada entre esas dos fechas, ambas incluidas. 
 --Si se omite la segunda fecha, se tomará la actual con GETDATE().
 --Devuelve con return códigos de error si el código de la instalación es erróneo  o si la fecha de inicio es posterior a la de fin.
+GO
+CREATE PROCEDURE HorasAlquilada
+	@codigoInstalacion INT,
+	@fecha1 DATE,
+	@fecha2 DATE,
+	@horas INT OUTPUT AS
+	BEGIN
+		--Si el codigo recibido no coincide con ninguna instalacion devuelve -1.
+		IF @codigoInstalacion <> (SELECT * FROM Instalaciones)
+		BEGIN
+				RETURN -1
+		END
 
+		--Si la fecha1 es posterior a la fecha2 devuelve -2.
+		ELSE IF @fecha1 > @fecha2
+		BEGIN
+			RETURN -2
+		END
+
+		ELSE IF @Fecha2 = NULL --Si @fecha2 es omitido, se tomará la fecha actual.
+		BEGIN
+				SELECT @Horas = DATEDIFF(HH, @Fecha1, GETDATE()) FROM Reservas
+				WHERE @Fecha1 <= GETDATE() AND @CodigoInstalacion = Cod_Instalacion
+				RETURN @Horas
+		END --Fin ELSE IF
+
+		ELSE IF @Fecha2 <> NULL
+		BEGIN
+			SELECT @Horas = DATEDIFF(HH, @Fecha1, @Fecha2) FROM Reservas
+			WHERE @Fecha1 <= @Fecha2 AND @codigoInstalacion = Cod_Instalacion
+			RETURN @Horas
+		END--Fin ELSE IF
+	END--Fin del procedimiento.
+GO
 
 --Ejercicio 4
 --Escribe un procedimiento EfectuarReserva que reciba como parámetro el DNI de un usuario, el código de la instalación, 
@@ -58,10 +91,40 @@ SELECT @IDUsuario
 --la función @@identity tras el INSERT.
 --Devuelve un cero si la operación se realiza con éxito y un código de error según la lista siguiente:
 
-
 --3: La instalación está ocupada para esa fecha y hora
 --4: El código de la instalación es incorrecto
 --5: El usuario no existe
 --8: La fecha/hora de inicio del alquiler es posterior a la de fin
 --11: La fecha de inicio y de fin son diferentes
 
+--TERMINAR!!
+GO
+CREATE PROCEDURE EfectuarReserva 
+@DNI CHAR(9),
+@codInstalacion INT,
+@fechaInicio SMALLDATETIME,
+@fechaFinal SMALLDATETIME,
+@codReserva INT OUTPUT AS
+BEGIN
+	--Si el codigo de la instalacion es incorrecto.
+	IF @codInstalacion <> (SELECT Cod_Instalacion FROM Reservas)
+	BEGIN
+		SET @codReserva = 4
+	END
+	--Si el usuario no existe.
+	ELSE IF @DNI <> (SELECT DNI FROM Usuarios)		
+	BEGIN
+		SET @codReserva = 5
+	END
+	--Si la fecha de inciio es posterior a la de fin.
+	ELSE IF @fechaInicio > @fechaFinal
+	BEGIN
+		SET @codReserva = 8
+	END
+	--Si la fecha de inicio y de sin son diferentes.
+	ELSE IF DAY(@fechaInicio) <> DAY(@fechaFinal)
+	BEGIN
+		SET @codReserva = 11
+	END
+END
+GO
