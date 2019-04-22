@@ -137,7 +137,7 @@ BEGIN
 						SET @Error = 0
 					END
 					ELSE
-					BEGIN
+					BEGIN --Si la fecha de inicio y la de fin son diferentes:
 						SET @Error = 11
 					END
 				END
