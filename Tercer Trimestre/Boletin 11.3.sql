@@ -1,4 +1,5 @@
 USE CentroDeportivo
+SET DATEFORMAT YMD
 --Ejercicio 1
 --Escribe un procedimiento EliminarUsuario que reciba como parámetro el DNI de un usuario, le coloque un NULL en la 
 --columna Sex y borre todas las reservas futuras de ese usuario. Ten en cuenta que si alguna de esas reservas tiene 
@@ -58,7 +59,7 @@ CREATE PROCEDURE HorasAlquilada
 		--Si el codigo recibido no coincide con ninguna instalacion devuelve -1.
 		IF @codigoInstalacion <> (SELECT * FROM Instalaciones)
 		BEGIN
-				RETURN -1
+			RETURN -1
 		END
 
 		--Si la fecha1 es posterior a la fecha2 devuelve -2.
@@ -69,9 +70,9 @@ CREATE PROCEDURE HorasAlquilada
 
 		ELSE IF @Fecha2 = NULL --Si @fecha2 es omitido, se tomará la fecha actual.
 		BEGIN
-				SELECT @Horas = DATEDIFF(HH, @Fecha1, GETDATE()) FROM Reservas
-				WHERE @Fecha1 <= GETDATE() AND @CodigoInstalacion = Cod_Instalacion
-				RETURN @Horas
+			SELECT @Horas = DATEDIFF(HH, @Fecha1, GETDATE()) FROM Reservas
+			WHERE @Fecha1 <= GETDATE() AND @CodigoInstalacion = Cod_Instalacion
+			RETURN @Horas
 		END --Fin ELSE IF
 
 		ELSE IF @Fecha2 <> NULL
@@ -97,34 +98,74 @@ GO
 --8: La fecha/hora de inicio del alquiler es posterior a la de fin
 --11: La fecha de inicio y de fin son diferentes
 
---TERMINAR!!
+/*
+ prototipo: create procedure EfectuarReserva @Dni char(9),@CodigoInstalacion int,@Fecha_horaInicio smalldatetime,@Fecha_horaFin smalldatetime,@CodigoReserva as int output
+ comentarios: procedimiento para grabar una nueva reserva
+ precondiciones: no hay
+ entradas: @Dni char(9),@CodigoInstalacion int,@Fecha_horaInicio smalldatetime,@Fecha_horaFin smalldatetime
+ salidas:@Error as int,codigo de reserva
+ entr/sal: no hay
+ postcondiciones: devuelve un 0 si se ha grabado correctamente la reserva,3 si la instalacion esta ocupada,
+     4 si el codigo de instalacion es incorrecto,
+     5 si el usuario no existe,8 sila fecha de inicio  es posteriora a la de fin y 
+     11 si si la fecha de inicio y de fin son diferentes
+*/
 GO
-CREATE PROCEDURE EfectuarReserva 
-@DNI CHAR(9),
-@codInstalacion INT,
-@fechaInicio SMALLDATETIME,
-@fechaFinal SMALLDATETIME,
-@codReserva INT OUTPUT AS
-BEGIN
-	--Si el codigo de la instalacion es incorrecto.
-	IF @codInstalacion <> (SELECT Cod_Instalacion FROM Reservas)
+ALTER procedure EfectuarReserva @Dni char(9),@CodigoInstalacion int,@Fecha_horaInicio smalldatetime,@Fecha_horaFin smalldatetime,@CodigoReserva int output as
+BEGIN 
+ DECLARE @Error INT
+
+IF NOT EXISTS(SELECT Cod_Instalacion FROM Reservas
+       WHERE Fecha_Hora BETWEEN @Fecha_horaInicio AND @Fecha_horaFin)
+BEGIN 
+	IF EXISTS (SELECT Codigo FROM Instalaciones
+		WHERE @CodigoInstalacion = Codigo)
+		BEGIN
+			IF EXISTS (SELECT DNI FROM Usuarios
+				WHERE @Dni = DNI)
+			BEGIN
+				IF @Fecha_horaInicio < @Fecha_horaFin
+				BEGIN
+					IF CAST(@Fecha_horaFin AS DATE) = CAST(@Fecha_horaInicio AS DATE)
+					BEGIN
+						--SET IDENTITY_INSERT Reservas ON
+						INSERT INTO Reservas
+						(Tiempo,Fecha_Hora,ID_Usuario,Cod_Instalacion)
+						VALUES(DATEPART(HOUR,@Fecha_horaFin)-DATEPART(HOUR,@Fecha_horaInicio),@Fecha_horaInicio,(SELECT ID FROM Usuarios WHERE @Dni = DNI),@CodigoInstalacion)
+						SET @CodigoReserva = @@IDENTITY
+						--SET IDENTITY_INSERT Reservas OFF
+						SET @Error = 0
+					END
+					ELSE
+					BEGIN
+						SET @Error = 11
+					END
+				END
+				ELSE
+				BEGIN
+					SET @Error = 8
+				END
+			END
+			ELSE
+			BEGIN
+				SET @Error=5
+			END
+		END
+	ELSE
 	BEGIN
-		SET @codReserva = 4
-	END
-	--Si el usuario no existe.
-	ELSE IF @DNI <> (SELECT DNI FROM Usuarios)		
-	BEGIN
-		SET @codReserva = 5
-	END
-	--Si la fecha de inciio es posterior a la de fin.
-	ELSE IF @fechaInicio > @fechaFinal
-	BEGIN
-		SET @codReserva = 8
-	END
-	--Si la fecha de inicio y de sin son diferentes.
-	ELSE IF DAY(@fechaInicio) <> DAY(@fechaFinal)
-	BEGIN
-		SET @codReserva = 11
+		SET @Error = 4
 	END
 END
+ELSE
+BEGIN
+	SET @Error = 3
+END
+
+RETURN @Error
+END
+
 GO
+DECLARE @Error INT
+DECLARE @CodigoReserva INT 
+EXECUTE @Error = EfectuarReserva '59544420G', 1, '2019-12-12 15:00:00', '2019-12-12 17:00:00', @CodigoReserva OUTPUT
+SELECT @Error,@CodigoReserva
