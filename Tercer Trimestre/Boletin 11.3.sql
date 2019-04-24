@@ -111,7 +111,7 @@ GO
      11 si si la fecha de inicio y de fin son diferentes
 */
 GO
-ALTER procedure EfectuarReserva @Dni char(9),@CodigoInstalacion int,@Fecha_horaInicio smalldatetime,@Fecha_horaFin smalldatetime,@CodigoReserva int output as
+ALTER PROCEDURE EfectuarReserva @Dni CHAR(9),@CodigoInstalacion INT,@Fecha_horaInicio SMALLDATETIME,@Fecha_horaFin SMALLDATETIME,@CodigoReserva INT OUTPUT AS
 BEGIN 
  DECLARE @Error INT
 
@@ -148,7 +148,7 @@ BEGIN
 			END
 			ELSE
 			BEGIN
-				SET @Error=5
+				SET @Error = 5
 			END
 		END
 	ELSE
