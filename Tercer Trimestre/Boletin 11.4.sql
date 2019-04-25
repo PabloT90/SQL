@@ -100,13 +100,27 @@ ROLLBACK
 --Los valores de N1 y N2 se pasarán como parámetros. Si se omiten, se tomará el valor 5.
 --Ambos premios son excluyentes. Si algún pasajero cumple ambas condiciones se le aplicará la que suponga mayor bonificación de las dos.
 SELECT * FROM LM_Viajes
+--El update ya recorre toda la tabla.
+--Solo hay que crear una funcion escalar al que le pasamos un ID del pasajero y ella misma se encarga de hacer las actualizaciones.
 GO
 --Si se omiten N1 o N2, se tomara como valor el 5. Seria asi:
 CREATE PROCEDURE RecargaFieles (@N1 SMALLMONEY = 5, @N2 SMALLMONEY = 5) AS
 BEGIN
 	
-	--Buscamos los que hayan gastado ams de 30 euros en el mes anterior
-	SELECT IDTarjeta, COUNT(IDTarjeta) AS[Veces Viajada] FROM LM_Viajes
+	CREATE TYPE Tipo1 AS
+	TABLE(tipo INT)
+
+	DECLARE 
+	--Buscamos los que hayan usado mas de 10 veces alguna estacion de las zonas 3 y 4.
+	SELECT IDTarjeta, COUNT(IDTarjeta) AS[Veces Viajada] FROM LM_Viajes AS[V]
+		INNER JOIN LM_Estaciones AS [E] ON V.IDEstacionEntrada = E.ID OR V.IDEstacionSalida = E.ID
+	WHERE E.Zona_Estacion IN(3,4)
+	GROUP BY IDTarjeta
+	HAVING COUNT(IDTarjeta) >= 10
+
+	UPDATE LM_Tarjetas
+	SET Saldo += ESCALAR(idTarja, N1, N2)
+
 END
 GO
 
@@ -114,7 +128,28 @@ GO
 --Ejercicio 5
 --Crea una función que nos devuelva verdadero si es posible que un pasajero haya subido a un tren en un determinado viaje. 
 --Se pasará como parámetro el código del viaje y la matrícula del tren.
-
+/*
+Descripcion: nos dice si es posible que un pasajero haya subido a un tren en un determinado viaje.
+Entrada: @idViaje INT, @matricula char(7)
+Salida: subida BIT
+Precondiciones: asociado al nombre devuelve 1 si es posible que hubiera pasajeros y 0 en caso contrario.
+*/
+GO
+CREATE FUNCTION subidaAlTren (@idViaje INT,@matricula char(7)) RETURNS BIT AS
+BEGIN
+	DECLARE @subida BIT
+	IF(SELECT * FROM LM_Trenes AS[T]
+		INNER JOIN LM_Recorridos AS[R] ON T.ID = R.Tren
+		INNER JOIN LM_Estaciones AS[E] ON R.estacion = E.ID
+		INNER JOIN LM_Viajes AS[V] ON E.ID = V.IDEstacionEntrada
+		WHERE T.Matricula = @matricula AND V.ID = @idViaje
+		)IS NOT NULL
+		SET @subida = 1
+	ELSE
+		SET @subida = 0
+	RETURN @subida
+END
+GO
 
 
 --Ejercicio 6
