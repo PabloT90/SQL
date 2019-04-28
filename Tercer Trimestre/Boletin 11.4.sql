@@ -1,4 +1,4 @@
-USE LeoMetroV2
+ USE LeoMetroV2
 SET DATEFORMAT YMD
 --Ejercicio 0
 --La dimisión de Esperanza Aguirre ha causado tal conmoción entre los directivos de LeoMetro que han decidido conceder una 
@@ -70,8 +70,14 @@ GO
 --A veces, un pasajero reclama que le hemos cobrado un viaje de forma indebida. Escribe un procedimiento que reciba como 
 --parámetro el ID de un pasajero y la fecha y hora de la entrada en el metro y anule ese viaje, actualizando además el saldo 
 --de la tarjeta que utilizó.
-SELECT * FROM LM_Viajes
-SELECT * FROM LM_Tarjetas
+/*
+Nombre: ReclamarCobro
+Cabecera: CREATE PROCEDURE ReclamarCobro @IDpasajero INT, @fecha SMALLDATETIME AS
+Entrada: IDpasajero INT, fecha SMALLDATETIME
+Precondiciones:
+	- El IDpasajero tiene que existir.
+Salida: no hay.
+*/
 GO
 CREATE PROCEDURE ReclamarCobro (@IDpasajero INT, @fecha SMALLDATETIME) AS
 BEGIN
@@ -88,10 +94,16 @@ BEGIN
 END
 GO
 
+--EXECUTE ReclamarCobro 1,'2017-02-24 16:50' --Asi no funciona, da error
+
+--Asi no da error.
 BEGIN TRAN
-EXECUTE ReclamarCobro 1,'2017-02-24 16:50:00'
+DECLARE @Fecha SMALLDATETIME
+SET @Fecha = SMALLDATETIMEFROMPARTS(2017, 02, 24, 16, 50)
+EXECUTE ReclamarCobro 1, @fecha
 ROLLBACK
 
+**
 --Ejercicio 4
 --La empresa de Metro realiza una campaña de promoción para pasajeros fieles.
 --Crea un procedimiento almacenado que recargue saldo a los pasajeros que cumplan determinados requisitos. 
@@ -110,7 +122,6 @@ BEGIN
 	CREATE TYPE Tipo1 AS
 	TABLE(tipo INT)
 
-	DECLARE 
 	--Buscamos los que hayan usado mas de 10 veces alguna estacion de las zonas 3 y 4.
 	SELECT IDTarjeta, COUNT(IDTarjeta) AS[Veces Viajada] FROM LM_Viajes AS[V]
 		INNER JOIN LM_Estaciones AS [E] ON V.IDEstacionEntrada = E.ID OR V.IDEstacionSalida = E.ID
@@ -155,7 +166,21 @@ GO
 --Ejercicio 6
 --Crea un procedimiento SustituirTarjeta que Cree una nueva tarjeta y la asigne al mismo usuario y con el mismo saldo que otra 
 --tarjeta existente. El código de la tarjeta a sustituir se pasará como parámetro.
+SELECT * FROM LM_Tarjetas
+GO
+CREATE PROCEDURE SustituirTarjeta (@codTarjeta INT) AS
+BEGIN
+	INSERT INTO LM_Tarjetas (saldo, IDPasajero)
+	SELECT Saldo, IDPasajero FROM LM_Tarjetas
+		WHERE ID = @codTarjeta
+--No se si hay que hacer algo mas.
+END
+GO
 
+--Pruebo el procedimiento
+BEGIN TRAN
+EXECUTE SustituirTarjeta 12
+--ROLLBACK
 
 --Ejercicio 7
 --Las estaciones de la zona 3 tienen ciertas deficiencias, lo que nos ha obligado a introducir una serie de modificaciones en 
@@ -164,3 +189,24 @@ GO
 --de tipo 1 y 4 plazas para los trenes de tipo 2.
 --Realiza un procedimiento al que se pase un intervalo de tiempo y modifique la capacidad de todos los trenes que hayan 
 --circulado más de una vez por alguna estación de la zona 3 en ese intervalo.
+SELECT * FROM LM_Trenes
+SELECT * FROM LM_Recorridos
+SELECT * FROM LM_Estaciones
+SELECT * FROM LM_Viajes
+GO
+CREATE PROCEDURE ModificarTren (@intervalo1 SMALLDATETIME, @intervalo2 SMALLDATETIME) AS
+BEGIN
+
+	--Guardo los trenes que han circulado mas de una vez por la zona 3
+	CREATE TYPE trenes AS
+	TABLE(idTren INT)
+
+	DECLARE @numTrenes trenes
+	SET @numTrenes = (SELECT Tren ,COUNT(Tren) AS[Veces en Zona 3] FROM LM_Trenes AS[T]
+		INNER JOIN LM_Recorridos AS[R] ON T.ID = R.Tren
+		INNER JOIN LM_Estaciones AS[E] ON R.estacion = E.ID
+		INNER JOIN LM_Viajes AS[V] ON E.ID = V.IDEstacionEntrada OR E.ID = V.IDEstacionSalida
+	WHERE T.Tipo = 1 AND E.Zona_Estacion = 3 --AND (R.Momento BETWEEN @intervalo1 AND @intervalo2)
+	GROUP BY Tren)
+END
+GO
