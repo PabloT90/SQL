@@ -1,4 +1,4 @@
- USE LeoMetroV2
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                USE LeoMetroV2
 SET DATEFORMAT YMD
 --Ejercicio 0
 --La dimisión de Esperanza Aguirre ha causado tal conmoción entre los directivos de LeoMetro que han decidido conceder una 
@@ -149,18 +149,23 @@ GO
 CREATE FUNCTION subidaAlTren (@idViaje INT,@matricula char(7)) RETURNS BIT AS
 BEGIN
 	DECLARE @subida BIT
-	IF(SELECT * FROM LM_Trenes AS[T]
-		INNER JOIN LM_Recorridos AS[R] ON T.ID = R.Tren
-		INNER JOIN LM_Estaciones AS[E] ON R.estacion = E.ID
-		INNER JOIN LM_Viajes AS[V] ON E.ID = V.IDEstacionEntrada
-		WHERE T.Matricula = @matricula AND V.ID = @idViaje
-		)IS NOT NULL
+	IF EXISTS(SELECT * FROM LM_Trenes AS[T]
+				INNER JOIN LM_Recorridos AS[R] ON T.ID = R.Tren
+				INNER JOIN LM_Estaciones AS[E] ON R.estacion = E.ID
+				INNER JOIN LM_Viajes AS[V] ON E.ID = V.IDEstacionEntrada
+				WHERE T.Matricula = @matricula AND V.ID = @idViaje
+			 )
 		SET @subida = 1
 	ELSE
 		SET @subida = 0
 	RETURN @subida
 END
 GO
+
+--Para dejar constancia de que he hecho mas pruebas hay que ponerlas todas una debajo de otra.
+DECLARE @subido BIT
+SET @subido = dbo.subidaAlTren (1,'0100FRY')
+PRINT @subido
 
 
 --Ejercicio 6
@@ -206,7 +211,7 @@ BEGIN
 		INNER JOIN LM_Recorridos AS[R] ON T.ID = R.Tren
 		INNER JOIN LM_Estaciones AS[E] ON R.estacion = E.ID
 		INNER JOIN LM_Viajes AS[V] ON E.ID = V.IDEstacionEntrada OR E.ID = V.IDEstacionSalida
-	WHERE T.Tipo = 1 AND E.Zona_Estacion = 3 --AND (R.Momento BETWEEN @intervalo1 AND @intervalo2)
+	WHERE T.Tipo = 1 AND E.Zona_Estacion = 3 AND (R.Momento BETWEEN @intervalo1 AND @intervalo2)
 	GROUP BY Tren)
 END
 GO
