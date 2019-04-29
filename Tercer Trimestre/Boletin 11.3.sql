@@ -91,7 +91,6 @@ GO
 --Devolverá el código de reserva generado mediante un parámetro de salida. Para obtener el valor generado usar 
 --la función @@identity tras el INSERT.
 --Devuelve un cero si la operación se realiza con éxito y un código de error según la lista siguiente:
-
 --3: La instalación está ocupada para esa fecha y hora
 --4: El código de la instalación es incorrecto
 --5: El usuario no existe
@@ -99,73 +98,44 @@ GO
 --11: La fecha de inicio y de fin son diferentes
 
 /*
- prototipo: create procedure EfectuarReserva @Dni char(9),@CodigoInstalacion int,@Fecha_horaInicio smalldatetime,@Fecha_horaFin smalldatetime,@CodigoReserva as int output
- comentarios: procedimiento para grabar una nueva reserva
- precondiciones: no hay
- entradas: @Dni char(9),@CodigoInstalacion int,@Fecha_horaInicio smalldatetime,@Fecha_horaFin smalldatetime
- salidas:@Error as int,codigo de reserva
- entr/sal: no hay
- postcondiciones: devuelve un 0 si se ha grabado correctamente la reserva,3 si la instalacion esta ocupada,
-     4 si el codigo de instalacion es incorrecto,
-     5 si el usuario no existe,8 sila fecha de inicio  es posteriora a la de fin y 
-     11 si si la fecha de inicio y de fin son diferentes
+Estudio de interfaz
+Entrada: @DNI CHAR(9), @codigoInstalacion INT, @fechaInicio SMALLDATETIME, @fechaFinal SMALLDATETIME
+Salida: @codigoReserva INT, @error SMALLINT
+Precondiciones: no hay.
+Postcondiciones: devuelve un 0 si se ha grabado correctamente la reserva,3 si la instalacion esta ocupada,
+				 4 si el codigo de instalacion es incorrecto,
+				 5 si el usuario no existe,8 sila fecha de inicio  es posteriora a la de fin y 
+				 11 si si la fecha de inicio y de fin son diferentes
 */
 GO
-ALTER PROCEDURE EfectuarReserva @Dni CHAR(9),@CodigoInstalacion INT,@Fecha_horaInicio SMALLDATETIME,@Fecha_horaFin SMALLDATETIME,@CodigoReserva INT OUTPUT AS
-BEGIN 
- DECLARE @Error INT
-
-IF NOT EXISTS(SELECT Cod_Instalacion FROM Reservas
-       WHERE Fecha_Hora BETWEEN @Fecha_horaInicio AND @Fecha_horaFin)
-BEGIN 
-	IF EXISTS (SELECT Codigo FROM Instalaciones
-		WHERE @CodigoInstalacion = Codigo)
-		BEGIN
-			IF EXISTS (SELECT DNI FROM Usuarios
-				WHERE @Dni = DNI)
-			BEGIN
-				IF @Fecha_horaInicio < @Fecha_horaFin
-				BEGIN
-					IF CAST(@Fecha_horaFin AS DATE) = CAST(@Fecha_horaInicio AS DATE)
-					BEGIN
-						--SET IDENTITY_INSERT Reservas ON
-						INSERT INTO Reservas
-						(Tiempo,Fecha_Hora,ID_Usuario,Cod_Instalacion)
-						VALUES(DATEPART(HOUR,@Fecha_horaFin)-DATEPART(HOUR,@Fecha_horaInicio),@Fecha_horaInicio,(SELECT ID FROM Usuarios WHERE @Dni = DNI),@CodigoInstalacion)
-						SET @CodigoReserva = @@IDENTITY
-						--SET IDENTITY_INSERT Reservas OFF
-						SET @Error = 0
-					END
-					ELSE
-					BEGIN --Si la fecha de inicio y la de fin son diferentes:
-						SET @Error = 11
-					END
-				END
-				ELSE
-				BEGIN
-					SET @Error = 8
-				END
-			END
-			ELSE
-			BEGIN
-				SET @Error = 5
-			END
-		END
-	ELSE
-	BEGIN
-		SET @Error = 4
-	END
-END
+ALTER PROCEDURE EfectuarReserva (@DNI CHAR(9), @codigoInstalacion INT, @fechaInicio SMALLDATETIME, @fechaFinal SMALLDATETIME, @codigoReserva INT OUTPUT) AS
+BEGIN
+DECLARE @error SMALLINT
+IF NOT EXISTS(SELECT ID FROM Usuarios WHERE DNI = @DNI)
+	SET @error = 5
+ELSE IF NOT EXISTS (SELECT * FROM Instalaciones WHERE Codigo = @codigoInstalacion)
+	SET @error = 4
+ELSE IF @fechaInicio > @fechaFinal
+	SET @error = 8
+ELSE IF CAST(@fechaInicio AS DATE) <> CAST(@fechaFinal AS DATE)
+	SET @error = 11
+ELSE IF (SELECT Cod_Instalacion FROM Reservas WHERE Cod_Instalacion = @codigoInstalacion AND (Fecha_Hora BETWEEN @fechaInicio AND @fechaFinal)) IS NOT NULL
+	SET @error = 3
 ELSE
 BEGIN
-	SET @Error = 3
+	INSERT INTO Reservas
+	VALUES(DATEPART(HH,@fechaFinal)-DATEPART(HH, @fechaInicio), @fechaInicio, (SELECT ID FROM Usuarios WHERE DNI = @DNI), @codigoInstalacion)
+	SET @codigoReserva = @@IDENTITY
+	SET @error = 0
+END --Fin del ELSE
 END
-
-RETURN @Error
-END
-
 GO
-DECLARE @Error INT
-DECLARE @CodigoReserva INT 
-EXECUTE @Error = EfectuarReserva '59544420G', 1, '2019-12-12 15:00:00', '2019-12-12 17:00:00', @CodigoReserva OUTPUT
-SELECT @Error,@CodigoReserva
+
+--Para probar la funcion:
+--Declaro los parametros de salida para luego mostrarlos.
+BEGIN TRAN
+DECLARE @error SMALLINT
+DECLARE @codigoReserva INT
+EXECUTE @error = EfectuarReserva '59544420G',1,'2019-12-12 15:00:00','2019-12-12 17:00:00',@CodigoReserva output
+SELECT @error, @codigoReserva
+ROLLBACK
