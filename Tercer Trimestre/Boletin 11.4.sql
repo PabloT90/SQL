@@ -1,27 +1,47 @@
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                USE LeoMetroV2
+USE LeoMetroV2
 SET DATEFORMAT YMD
 --Ejercicio 0
 --La dimisión de Esperanza Aguirre ha causado tal conmoción entre los directivos de LeoMetro que han decidido conceder una 
 --amnistía a todos los pasajeros que tengan un saldo negativo en sus tarjetas.
 --Crea un procedimiento que racargue la cantidad necesaria para dejar a 0 el saldo de las tarjetas que tengan un saldo negativo 
 --y hayan sido recargadas al menos una vez en los últimos dos meses.
---Ejercicio elaborado en colaboración con Sefran.
-SELECT * FROM LM_Recargas
-SELECT * FROM LM_Tarjetas
+
+/*
+Entrada: @IDtarjeta INT
+Salida: @cantidadRecargar SMALLMONEY
+Precondiciones: ---
+Postcondiciones: Asociado al nombre devuelve la cantidad necesaria a recargar para establecer el saldo a 0€.
+*/
+GO
+ALTER FUNCTION cantidadNecesaria(@IDtarjeta INT) RETURNS SMALLMONEY AS
+BEGIN
+	DECLARE @cantidadRecargar SMALLMONEY
+
+	SET @cantidadRecargar = (SELECT Saldo FROM LM_Tarjetas AS[T]
+		INNER JOIN LM_Recargas AS[R] ON T.ID = R.ID_Tarjeta
+	WHERE Saldo < 0 AND T.ID = @IDtarjeta AND CAST(R.Momento_Recarga AS DATE) > '2019-04-01')
+
+	RETURN ABS(@cantidadRecargar) --Devuelve el valor absoluto.
+END
+GO
+
+/*
+Entrada: ---
+Salida: ---
+Precondiciones: ---
+Postcondiciones: Recarga el saldo a las personas que han efectuado una recarga hace menos de 2 meses.
+*/
 GO
 CREATE PROCEDURE RecargarSaldo AS
 BEGIN
 
 	DECLARE @cantidad SMALLMONEY
-	SET @cantidad = (SELECT Saldo FROM LM_Tarjetas WHERE )
 
 	UPDATE LM_Tarjetas
-	SET Saldo = Saldo - (@cantidad)
-	FROM LM_Tarjetas AS[T]
-		INNER JOIN LM_Recargas AS[R] ON T.ID = R.ID_Tarjeta
-	WHERE Saldo < 0  AND YEAR(Momento_Recarga) = YEAR(CURRENT_TIMESTAMP) AND (MONTH(CURRENT_TIMESTAMP)-MONTH(Momento_Recarga)) < 2 --Asi es un poco mierda pero weno.
+	SET Saldo = Saldo + dbo.cantidadNecesaria(ID)
 END
 GO
+
 --Ejercicio 1
 --Crea un procedimiento RecargarTarjeta que reciba como parámetros el ID de una tarjeta y un importe y actualice el saldo 
 --de la tarjeta sumándole dicho importe, además de grabar la correspondiente recarga
@@ -103,7 +123,7 @@ SET @Fecha = SMALLDATETIMEFROMPARTS(2017, 02, 24, 16, 50)
 EXECUTE ReclamarCobro 1, @fecha
 ROLLBACK
 
-**
+
 --Ejercicio 4
 --La empresa de Metro realiza una campaña de promoción para pasajeros fieles.
 --Crea un procedimiento almacenado que recargue saldo a los pasajeros que cumplan determinados requisitos. 
@@ -111,7 +131,7 @@ ROLLBACK
 --y N2 euros a los que hayan utilizado más de 10 veces alguna estación de las zonas 3 o 4. 
 --Los valores de N1 y N2 se pasarán como parámetros. Si se omiten, se tomará el valor 5.
 --Ambos premios son excluyentes. Si algún pasajero cumple ambas condiciones se le aplicará la que suponga mayor bonificación de las dos.
-SELECT * FROM LM_Viajes
+
 --El update ya recorre toda la tabla.
 --Solo hay que crear una funcion escalar al que le pasamos un ID del pasajero y ella misma se encarga de hacer las actualizaciones.
 --Si se omiten N1 o N2, se tomara como valor el 5. Seria asi:
