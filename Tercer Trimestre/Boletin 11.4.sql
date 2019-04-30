@@ -114,27 +114,57 @@ ROLLBACK
 SELECT * FROM LM_Viajes
 --El update ya recorre toda la tabla.
 --Solo hay que crear una funcion escalar al que le pasamos un ID del pasajero y ella misma se encarga de hacer las actualizaciones.
-GO
 --Si se omiten N1 o N2, se tomara como valor el 5. Seria asi:
-CREATE PROCEDURE RecargaFieles (@N1 SMALLMONEY = 5, @N2 SMALLMONEY = 5) AS
+
+/*
+Esta funcion permite saber si el fiel con ID pasado como parametro hay que recargarle dinero o no.
+*/
+GO
+CREATE FUNCTION RecargaFieles (@IDtarjeta INT, @N1 SMALLMONEY = 5, @N2 SMALLMONEY = 5) RETURNS INT AS
 BEGIN
-	
-	CREATE TYPE Tipo1 AS
-	TABLE(tipo INT)
+	DECLARE @dinero SMALLMONEY
+	SET @dinero = 0 --Esto es por si algun fiel no cumple algun requisito, que devuelva 0.
 
 	--Buscamos los que hayan usado mas de 10 veces alguna estacion de las zonas 3 y 4.
-	SELECT IDTarjeta, COUNT(IDTarjeta) AS[Veces Viajada] FROM LM_Viajes AS[V]
-		INNER JOIN LM_Estaciones AS [E] ON V.IDEstacionEntrada = E.ID OR V.IDEstacionSalida = E.ID
-	WHERE E.Zona_Estacion IN(3,4)
-	GROUP BY IDTarjeta
-	HAVING COUNT(IDTarjeta) >= 10
+	IF EXISTS (SELECT COUNT(IDTarjeta) AS[Veces Viajada] FROM LM_Viajes AS[V]
+					INNER JOIN LM_Estaciones AS [E] ON V.IDEstacionEntrada = E.ID OR V.IDEstacionSalida = E.ID
+				WHERE E.Zona_Estacion IN(3,4) AND V.IDTarjeta = @IDtarjeta
+				GROUP BY IDTarjeta
+				HAVING COUNT(IDTarjeta) >= 10)
+		SET @dinero = @N2
 
-	UPDATE LM_Tarjetas
-	SET Saldo += ESCALAR(idTarja, N1, N2)
+	--Buscamos los que hayan consumido mas de 30 euros en el mes anterior.
+	IF EXISTS (SELECT SUM(Importe_Viaje) AS[Gastado] FROM LM_Viajes AS[V]
+					WHERE CAST(V.MomentoSalida AS DATE) BETWEEN '2017-02-01' AND '2017-02-28' AND V.IDTarjeta = @IDTarjeta
+				GROUP BY IDTarjeta
+				HAVING SUM(Importe_Viaje) >= 30)
+		SET @dinero = @N1
 
+	--En la cabecera ya les asigno un valor por defecto, asi que no necesito comprobar si algun valor es nulo. Simplemente comparo que valor es mas grande y lo asigno.
+	IF (@N1 >= @N2)
+		SET @dinero = @N1
+	ELSE
+		SET @dinero = @N2
+
+	RETURN @dinero
 END
 GO
 
+/*
+Esta funcion actualiza los fieles que cumplan las condiciones del enunciado.
+*/
+GO
+CREATE PROCEDURE ActualizarFieles (@N1 SMALLMONEY = 5, @N2 SMALLMONEY = 5) AS
+BEGIN
+	UPDATE LM_Tarjetas
+	SET Saldo = Saldo + dbo.RecargaFieles(ID, @N1, @N2)
+END
+GO
+
+BEGIN TRAN
+EXECUTE ActualizarFieles 3,5
+SELECT * FROM LM_Tarjetas
+ROLLBACK
 
 --Ejercicio 5
 --Crea una función que nos devuelva verdadero si es posible que un pasajero haya subido a un tren en un determinado viaje. 
@@ -211,7 +241,7 @@ BEGIN
 		INNER JOIN LM_Recorridos AS[R] ON T.ID = R.Tren
 		INNER JOIN LM_Estaciones AS[E] ON R.estacion = E.ID
 		INNER JOIN LM_Viajes AS[V] ON E.ID = V.IDEstacionEntrada OR E.ID = V.IDEstacionSalida
-	WHERE T.Tipo = 1 AND E.Zona_Estacion = 3 AND (R.Momento BETWEEN @intervalo1 AND @intervalo2)
+	WHERE T.Tipo = 1 AND E.Zona_Estacion = 3 --AND (R.Momento BETWEEN @intervalo1 AND @intervalo2)
 	GROUP BY Tren)
 END
 GO
