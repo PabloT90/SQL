@@ -1,0 +1,164 @@
+--Tabla de pruebas:
+USE Ejemplos
+GO
+CREATE TABLE Palabras (
+ID SmallInt Not Null Identity Constraint PK_Palabras Primary Key
+,Palabra VarChar(30) Null
+) 
+
+--Iniciación:
+--Sin usar datos modificados
+--1.- Queremos que cada vez que se actualice la tabla Palabras aparezca un mensaje diciendo si
+--se han añadido, borrado o actualizado filas.
+--Pista: Crea tres triggers diferentes
+GO
+CREATE TRIGGER HaAnadido ON Palabras AFTER INSERT AS
+BEGIN
+	PRINT 'Se ha anadido.'
+END
+GO
+
+GO
+CREATE TRIGGER HaActualizado ON Palabras AFTER UPDATE AS
+BEGIN
+	PRINT 'Se ha actualizado.'
+END
+GO
+
+GO
+CREATE TRIGGER HaBorrrado ON Palabras AFTER DELETE AS
+BEGIN
+	PRINT 'Se ha borrado.'
+END
+GO
+
+--2.- Haz un trigger que cada vez que se aumente o disminuya el número de filas de la tabla
+--Palabras nos diga cuántas filas hay.
+GO
+CREATE TRIGGER NumeroFilas ON Palabras AFTER UPDATE AS
+BEGIN
+	DECLARE @filas INT
+	SET @filas = (SELECT * FROM Palabras)
+
+	PRINT 'Numero de filas' + @filas
+END
+GO
+
+--Medio:
+--Se usan inserted y deleted. Si es complicado procesar varias filas, supón
+--que se modifica sólo una.
+--3.- Cada vez que se inserte una fila queremos que se muestre un mensaje indicando
+--“Insertada la palabra ________”
+SELECT * FROM Palabras
+GO
+CREATE TRIGGER PalabraInsertada ON Palabras AFTER INSERT AS
+BEGIN
+	DECLARE @cont SMALLINT
+	SELECT @cont=MIN(ID) from inserted
+
+	WHILE @cont IS NOT NULL
+	BEGIN
+		--Muestro las palabras que se han insertado.
+		DECLARE @palabra varchar(10)
+		SELECT @palabra = palabra FROM inserted
+			WHERE ID = @cont
+		PRINT 'Insertada palabra: ' + @palabra
+
+		--Actualizo el contador
+		SELECT @cont=MIN(ID) FROM inserted
+			WHERE @cont < ID
+	END --Fin del bucle while
+END
+GO
+
+--Pruebas
+BEGIN TRAN 
+INSERT INTO Palabras VALUES
+('palabra1'),('palabra2'),('palabra3')
+ROLLBACK
+SELECT * FROM Palabras
+
+
+--4.- Cada vez que se inserten filas que nos diga “XX filas insertadas”
+GO
+CREATE TRIGGER FilasInsertadas ON Palabras AFTER INSERT AS
+BEGIN
+	DECLARE @numFilas SMALLINT
+	SET @numFilas = (SELECT COUNT(*) FROM inserted)
+	PRINT CAST(@numFilas AS VARCHAR) + ' filas insertadas'
+END
+GO
+
+--Pruebas
+BEGIN TRAN
+INSERT INTO Palabras VALUES
+('palabra1'),
+('palabra2'),
+('palabra3')
+INSERT INTO Palabras VALUES
+('palabra1'),
+('palabra2'),
+('palabra3')
+ROLLBACK
+
+--5.- que no permita introducir palabras repetidas (sin usar UNIQUE).
+GO
+ALTER TRIGGER NoRepes ON Palabras AFTER INSERT AS
+BEGIN
+	DECLARE @cont SMALLINT
+	SELECT @cont=MIN(ID) from inserted
+
+	WHILE @cont IS NOT NULL
+	BEGIN
+		--Guardo una palabra de la pseudotabla inserted
+		DECLARE @palabra varchar(10)
+		SELECT @palabra = palabra FROM inserted
+			WHERE ID = @cont
+
+		--Busco si esta repetida. En tal caso muestro el mensaje
+		IF EXISTS(SELECT * FROM Palabras
+			WHERE Palabra LIKE(@palabra))
+		BEGIN
+			PRINT 'La palabra: ' + @palabra + ' esta repetida'
+			ROLLBACK
+		END --Fin del si
+		--Actualizo el contador
+		SELECT @cont=MIN(ID) FROM inserted
+			WHERE @cont < ID
+	END --Fin del bucle while
+END
+GO
+
+--Pruebas
+BEGIN TRAN
+INSERT INTO Palabras VALUES
+('palabra1'),('palabra2'),('palabra3')
+BEGIN TRAN
+INSERT INTO Palabras VALUES
+('palabra1'),('palabra2'),('palabra3')
+ROLLBACK
+SELECT * FROM Palabras
+
+
+----Sobre LeoMetro--
+USE LeoMetroV2
+--6.- Comprueba que un pasajero no pueda entrar o salir por la misma estación más de tres veces el mismo día
+
+
+--7.- Haz un trigger que al insertar un viaje compruebe que no hay otro viaje simultáneo
+
+
+--Avanzado:
+--Se incluye la posibilidad de que se modifiquen varias filas y de que haya
+--que consultar otras tablas.
+--8.- Queremos evitar que se introduzcan palabras que terminen en “azo”
+
+
+----Sobre LeoFest--
+--9.- Cuando se inserte una nueva actuación de una banda hemos de comprobar que la banda
+--no se ha disuelto en esa fecha.
+
+
+--10 .- Comprueba mediante un trigger que en una edición no actúan más de tres bandas de la
+--misma categoría. 
+
