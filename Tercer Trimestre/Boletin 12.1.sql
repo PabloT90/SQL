@@ -53,13 +53,13 @@ SELECT * FROM Palabras
 GO
 CREATE TRIGGER PalabraInsertada ON Palabras AFTER INSERT AS
 BEGIN
+	DECLARE @palabra varchar(10)
 	DECLARE @cont SMALLINT
 	SELECT @cont=MIN(ID) from inserted
 
 	WHILE @cont IS NOT NULL
 	BEGIN
 		--Muestro las palabras que se han insertado.
-		DECLARE @palabra varchar(10)
 		SELECT @palabra = palabra FROM inserted
 			WHERE ID = @cont
 		PRINT 'Insertada palabra: ' + @palabra
@@ -105,23 +105,24 @@ ROLLBACK
 GO
 ALTER TRIGGER NoRepes ON Palabras AFTER INSERT AS
 BEGIN
+	DECLARE @palabra varchar(10)
 	DECLARE @cont SMALLINT
 	SELECT @cont=MIN(ID) from inserted
 
 	WHILE @cont IS NOT NULL
 	BEGIN
 		--Guardo una palabra de la pseudotabla inserted
-		DECLARE @palabra varchar(10)
 		SELECT @palabra = palabra FROM inserted
 			WHERE ID = @cont
 
 		--Busco si esta repetida. En tal caso muestro el mensaje
 		IF EXISTS(SELECT * FROM Palabras
-			WHERE Palabra LIKE(@palabra))
+			WHERE Palabra = @palabra)
 		BEGIN
-			PRINT 'La palabra: ' + @palabra + ' esta repetida'
 			ROLLBACK
+			PRINT 'La palabra: ' + @palabra + ' esta repetida'
 		END --Fin del si
+
 		--Actualizo el contador
 		SELECT @cont=MIN(ID) FROM inserted
 			WHERE @cont < ID
@@ -138,12 +139,60 @@ INSERT INTO Palabras VALUES
 ('palabra1'),('palabra2'),('palabra3')
 ROLLBACK
 SELECT * FROM Palabras
+DELETE FROM Palabras
 
 
 ----Sobre LeoMetro--
 USE LeoMetroV2
 --6.- Comprueba que un pasajero no pueda entrar o salir por la misma estación más de tres veces el mismo día
+SELECT * FROM LM_Viajes
+GO
+CREATE TRIGGER NoMasDeTres ON LM_Viajes AFTER INSERT AS
+BEGIN
+	DECLARE @entradas INT
+	DECLARE @tarjeta INT
+	DECLARE @salidas INT
+	DECLARE @fechaE DATE
+	DECLARE @fechaS DATE
+	DECLARE @cont INT
+	SELECT @cont=MIN(ID) from inserted
 
+	WHILE @cont IS NOT NULL
+	BEGIN
+		--Obtengo el ID de la tarjeta
+		SET @tarjeta = (SELECT IDtarjeta FROM inserted WHERE ID = @cont)
+
+		--Obtengo la fecha de entrada
+		SET @fechaE = (SELECT CAST(MomentoEntrada AS DATE) FROM inserted WHERE ID = @cont)
+
+		--Obtengo la fecha de salida
+		SET @fechaS = (SELECT CAST(MomentoSalida AS DATE) FROM inserted WHERE ID = @cont)
+
+		--Cuento las veces ha entrado por una estacion ese dia
+		SET @entradas = (SELECT COUNT(IDEstacionEntrada) FROM LM_Viajes
+							WHERE IDTarjeta = @tarjeta AND CAST(MomentoEntrada AS DATE) = @fechaE
+						GROUP BY IDTarjeta)
+		--Cuento las veces que ha salido por una estacion ese dia
+		SET @salidas = (SELECT COUNT(IDEstacionSalida) FROM LM_Viajes
+							WHERE IDTarjeta = @tarjeta AND CAST(MomentoSalida AS DATE) = @fechaS
+						GROUP BY IDTarjeta)
+		
+		--Si ha entrado o salido mas de 3 veces no deja insertar.
+		IF(@entradas > 3 OR @salidas > 3)
+			ROLLBACK
+
+		SELECT @cont=MIN(ID) FROM inserted
+			WHERE @cont < ID
+	END-- Fin del while
+END
+GO
+--Pruebas
+SET DATEFORMAT ymd
+BEGIN TRAN
+INSERT INTO LM_Viajes VALUES
+(1,1,6, '2017-02-24 16:50:00','2017-02-24 17:50:00', 1.75),
+(1,1,6, '2017-03-24','2017-03-24', 1.75)
+ROLLBACK
 
 --7.- Haz un trigger que al insertar un viaje compruebe que no hay otro viaje simultáneo
 
