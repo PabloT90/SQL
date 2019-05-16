@@ -213,6 +213,14 @@ BEGIN
 END --Fin_trigger
 GO
 
+--Pruebas
+BEGIN TRAN
+INSERT INTO LM_Viajes (IDTarjeta,IDEstacionEntrada,IDEstacionSalida,MomentoEntrada,MomentoSalida,Importe_Viaje)
+VALUES (1,1,6,SMALLDATETIMEFROMPARTS(2017,02,24,17,00) ,SMALLDATETIMEFROMPARTS(2017,02,24,18,00) ,1.75)
+BEGIN TRAN
+INSERT INTO LM_Viajes (IDTarjeta,IDEstacionEntrada,IDEstacionSalida,MomentoEntrada,MomentoSalida,Importe_Viaje)
+VALUES (1,1,6,CURRENT_TIMESTAMP,DATEADD(HOUR,2,GETDATE()) ,1.75)
+
 --Avanzado:
 --Se incluye la posibilidad de que se modifiquen varias filas y de que haya
 --que consultar otras tablas.
