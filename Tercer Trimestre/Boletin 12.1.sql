@@ -103,6 +103,7 @@ ROLLBACK
 
 --5.- que no permita introducir palabras repetidas (sin usar UNIQUE).
 GO
+--Este está mal
 ALTER TRIGGER NoRepes ON Palabras AFTER INSERT AS
 BEGIN
 	DECLARE @palabra varchar(10)
@@ -117,7 +118,7 @@ BEGIN
 
 		--Busco si esta repetida. En tal caso muestro el mensaje
 		IF EXISTS(SELECT * FROM Palabras
-			WHERE Palabra = @palabra)
+			WHERE Palabra = @palabra AND ID <> @cont) --No puede tener el mismo ID que el de inserted
 		BEGIN
 			ROLLBACK
 			PRINT 'La palabra: ' + @palabra + ' esta repetida'
@@ -195,13 +196,35 @@ INSERT INTO LM_Viajes VALUES
 ROLLBACK
 
 --7.- Haz un trigger que al insertar un viaje compruebe que no hay otro viaje simultáneo
-
+SELECT * FROM LM_Viajes
+GO
+CREATE TRIGGER NoSimultaneos ON LM_Viajes AFTER INSERT AS
+BEGIN
+	IF EXISTS (SELECT * FROM LM_Viajes AS [V]
+				CROSS JOIN inserted AS [I]
+				WHERE I.ID <> V.ID --El ID insertado sea diferente
+				AND (I.MomentoEntrada BETWEEN V.MomentoEntrada AND V.MomentoSalida
+				OR I.MomentoSalida BETWEEN V.MomentoEntrada AND V.MomentoSalida
+				OR I.MomentoEntrada < V.MomentoEntrada AND I.MomentoSalida > V.MomentoSalida))
+	BEGIN
+		ROLLBACK
+		RAISERROR ('Viaje simultaneo detectado', 16,1) --Lanzamos una excepcion.
+	END --Fin_si
+END --Fin_trigger
+GO
 
 --Avanzado:
 --Se incluye la posibilidad de que se modifiquen varias filas y de que haya
 --que consultar otras tablas.
 --8.- Queremos evitar que se introduzcan palabras que terminen en “azo”
-
+USE Ejemplos
+GO
+CREATE TRIGGER PalabrasSinAZO ON Palabras AFTER INSERT AS
+BEGIN
+	IF EXISTS(SELECT * FROM inserted WHERE Palabra LIKE('%azo'))
+		ROLLBACK
+END
+GO
 
 ----Sobre LeoFest--
 --9.- Cuando se inserte una nueva actuación de una banda hemos de comprobar que la banda
