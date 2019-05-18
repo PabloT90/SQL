@@ -75,11 +75,56 @@ SELECT COUNT(CategoryID) FROM Orders AS [O]
 	HAVING COUNT(CategoryID) > 10
 
 --3.- Haz un trigger que no permita que un empleado sea superior de otro (ReportsTo) si el segundo es su superior 
---(en uno o varios niveles).
+--(en uno o varios niveles). --De esto ultimo voy a pasar, por ahora.
+SELECT * FROM Employees
+GO
+--Este trigger solamente es válido para 1 solo nivel y un unico update. Si queremos hacerlo en mas niveles tendriamos que hacer un procedimiento que nos devuelva una tabla y luego en en WHERE
+-- poner NOT IN("Datos de la tabla")
+CREATE TRIGGER EmpleadoSuperior ON Employees AFTER UPDATE AS
+BEGIN
+	DECLARE @id SMALLINT
+	DECLARE @superior SMALLINT
+	--Guardo el EmployeeID del actualizado
+	SELECT @id = EmployeeID, @superior = ReportsTo FROM inserted
 
+	--Ahora miro que el ReportsTo sea igual al employeeID obtenido arriba, en ese caso haremos ROLLBACK
+	IF(SELECT ReportsTo FROM Employees
+		WHERE EmployeeID = @superior) = @id
+	BEGIN
+		ROLLBACK
+	END --Fin_si
+END
+GO
 
 --4.- Haz un trigger que impida que la primera venta a un cliente de fuera de USA pueda tener un importe superior a 500 $
+SELECT * FROM Orders
+SELECT * FROM [Order Details]
 
+GO
+CREATE TRIGGER FueraUSA ON [Order Details] AFTER INSERT AS
+BEGIN
+	DECLARE @cliente NCHAR(5)
+	DECLARE @filas SMALLINT
+	--CustomerID del recien insertado
+	SELECT @cliente = O.CustomerID FROM inserted AS[I]
+		INNER JOIN Orders AS[O] ON I.OrderID = O.OrderID
+
+	--Vemos si es la primera compra del cliente fuera de USA
+	SET @filas = (SELECT COUNT(*) FROM [Order Details] AS[OD]
+		INNER JOIN Orders AS[O] ON OD.OrderID = O.OrderID
+	WHERE ShipCountry <> 'USA' AND O.CustomerID = @cliente)
+
+	--Si es la primera venta vemos el dinero gastado.
+	IF(@filas = 1)
+		BEGIN
+			--Calculamos el dinero gastado en la primera venta, si es superior a 500$ se hará ROLLBACK
+			IF(SELECT SUM(OD.Quantity * UnitPrice) FROM [Order Details] AS[OD]
+				INNER JOIN Orders AS[O] ON OD.OrderID = O.OrderID
+			WHERE ShipCountry <> 'USA' AND O.CustomerID = 'VINET') > 500
+				ROLLBACK
+		END --Fin_si
+END
+GO
 
 --5.- Haz un trigger que impida que pueda haber a la venta más de 30 productos de una misma categoría. Los productos que 
 --están a la venta son los que tienen un "0” en la columna "discontinued”
