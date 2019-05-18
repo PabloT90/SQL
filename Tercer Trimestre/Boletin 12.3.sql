@@ -101,7 +101,7 @@ SELECT * FROM Orders
 SELECT * FROM [Order Details]
 
 GO
-CREATE TRIGGER FueraUSA ON [Order Details] AFTER INSERT AS
+ALTER TRIGGER FueraUSA ON [Order Details] AFTER INSERT AS
 BEGIN
 	DECLARE @cliente NCHAR(5)
 	DECLARE @filas SMALLINT
@@ -109,8 +109,9 @@ BEGIN
 	SELECT @cliente = O.CustomerID FROM inserted AS[I]
 		INNER JOIN Orders AS[O] ON I.OrderID = O.OrderID
 
+		PRINT @cliente
 	--Vemos si es la primera compra del cliente fuera de USA
-	SET @filas = (SELECT COUNT(*) FROM [Order Details] AS[OD]
+	SET @filas = (SELECT COUNT(DISTINCT O.OrderID) FROM [Order Details] AS[OD]
 		INNER JOIN Orders AS[O] ON OD.OrderID = O.OrderID
 	WHERE ShipCountry <> 'USA' AND O.CustomerID = @cliente)
 
@@ -120,11 +121,32 @@ BEGIN
 			--Calculamos el dinero gastado en la primera venta, si es superior a 500$ se hará ROLLBACK
 			IF(SELECT SUM(OD.Quantity * UnitPrice) FROM [Order Details] AS[OD]
 				INNER JOIN Orders AS[O] ON OD.OrderID = O.OrderID
-			WHERE ShipCountry <> 'USA' AND O.CustomerID = 'VINET') > 500
+			WHERE ShipCountry <> 'USA' AND O.CustomerID = @cliente) > 500
 				ROLLBACK
 		END --Fin_si
 END
 GO
+
+SELECT COUNT(DISTINCT O.OrderID) FROM [Order Details] AS[OD]
+		INNER JOIN Orders AS[O] ON OD.OrderID = O.OrderID
+	WHERE ShipCountry <> 'USA' AND O.CustomerID ='100'
+	--Pruebas
+SELECT * FROM Orders
+SELECT * FROM [Order Details]
+SELECT * FROM Customers
+
+BEGIN TRAN
+INSERT INTO Customers (CustomerID, CompanyName) VALUES(100, 'Misco')
+
+BEGIN TRAN
+SET IDENTITY_INSERT ORDERS ON --Para un error que da por el INSERT-IDENTITY OFF
+INSERT INTO Orders (OrderID, CustomerID, ShipCountry)VALUES(12001, '100', 'France')
+--BEGIN TRAN
+INSERT INTO [Order Details] VALUES
+(12001,1,1,1,0),(12001,2,1,1,0),(12001,24,1,1,0),(12001,34,4,1,0),(12001,35,1,1,0),(12001,38,1,1,0),
+(12001,39,1,1,0),(12001,43,1,1,0),(12001,67,1,1,0),(12001,70,1,1,0),(12001,75,500,1,0)
+ROLLBACK
+
 
 --5.- Haz un trigger que impida que pueda haber a la venta más de 30 productos de una misma categoría. Los productos que 
 --están a la venta son los que tienen un "0” en la columna "discontinued”
