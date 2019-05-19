@@ -166,10 +166,68 @@ GO
 --Sobre CasinOnLine
 USE CasinOnLine2
 --6.- Haz un trigger que asegure que una vez se introduce el número de una apuesta, no pueda cambiarse.
+SELECT * FROM COL_NumerosApuesta
+SELECT * FROM COL_Apuestas
+GO
+CREATE TRIGGER NoModificarApuesta ON COL_NumerosApuesta AFTER UPDATE AS
+BEGIN
+	IF UPDATE(Numero) --Esto hace que la columna Numero no se pueda actualizar. Asi impido que se cambie el numero de una apuesta.
+		ROLLBACK
 
+END
+GO
+
+SELECT * FROM COL_NumerosApuesta
+	ORDER BY IDJugador, IDMesa, IDJugada, Numero
+--Pruebas
+BEGIN TRAN
+UPDATE COL_NumerosApuesta
+	SET Numero = 4
+WHERE IDJugador = 1 AND IDMesa = 1 AND IDJugada = 1
+ROLLBACK
 
 --7.- Haz untrigger que garantice que no se puedan hacer más apuestas en una jugada si la columna NoVaMas tiene el valor 1.
+--Lo voy a intentar usando un CURSOR
+SELECT * FROM COL_Jugadas
+GO
+CREATE TRIGGER NoMasApuestasNovaMas ON COL_Apuestas AFTER INSERT AS
+BEGIN
+	DECLARE @IDmesa SMALLINT
+	DECLARE @IDjugada INT
+	DECLARE puntero CURSOR FOR SELECT IDJugada, IDMesa FROM inserted
+	OPEN puntero
+	FETCH NEXT FROM puntero INTO @IDjugada, @IDmesa
+	
+	WHILE(@@FETCH_STATUS = 0)
+	BEGIN
+		--Si la columna NoVaMas está a 1 no se permite el INSERT
+		IF(SELECT NoVaMas FROM COL_Jugadas
+			WHERE IDMesa = @IDmesa AND IDJugada = @IDjugada) = 1
+		BEGIN
+			ROLLBACK
+		END --Fin_si
+		FETCH NEXT FROM puntero INTO @IDjugada, @IDmesa
+	END--Fin_while
 
+	CLOSE puntero
+	DEALLOCATE puntero
+END --Fin_trigger
+GO
+
+--Pruebas
+SELECT * FROM COL_Apuestas
+SELECT * FROM COL_Jugadas
+BEGIN TRAN
+INSERT INTO COL_Jugadas
+VALUES(1,4602,NULL,0,NULL)
+BEGIN TRAN
+INSERT INTO COL_Apuestas VALUES
+(1,1,4602,15,12)
+ROLLBACK
+
+UPDATE COL_Jugadas
+ SET NoVaMas = 1
+	WHERE IDMesa = 1 AND IDJugada = 4602
 
 --8.- Haz un trigger que garantice que entre dos jugadas sucesivas en una misma mesa pasen al menos 5 minutos.
 
